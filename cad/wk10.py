@@ -8,14 +8,17 @@ Frame: X forward, Y left, Z up, ground at Z=0, origin midway between the axles.
 All lengths mm. Every number a printer or a vendor can move is a knob in the
 PARAMS block; the ones marked VERIFY come from a listing, not a caliper.
 """
+from functools import lru_cache
 from pathlib import Path
+import bought
 from build123d import (Box, Cylinder, Pos, Rot, Plane, Compound, mirror,
                        export_stl, export_step, Axis)
 
 OUT = Path(__file__).parent / "out"
 
 # ---------------------------------------------------------------- PARAMS
-WB, TRACK = 257.0, 175.0            # wheelbase, wheel-centre track (TT-02 class)
+WB, TRACK = 257.0, 164.0            # wheelbase, wheel-centre track: 190 mm over the tires, so a 190 mm
+                                    # 1/10 GT body (Venturi GT, 258 WB) covers the wheels
 R_W, W_W = 33.5, 26.0               # Shaluoman B09CPJV6VT listing: 67 mm OD, 26 mm wide, 3 mm offset
 FA_X, RA_X = WB / 2, -WB / 2
 AXLE_Z = R_W
@@ -26,6 +29,7 @@ HALF_W = 52.0                       # pan half-width
 PAN_X0, PAN_X1 = -88.0, 152.0
 JOINT_X = 86.0                      # pan splits here: both halves fit a 220 bed
 RAIL_T, RAIL_H = 3.0, 8.0
+PAN_FRONT_HW = 45.0                 # pan half-width around the front axle (tire swing at lock)
 
 # printer compensation (mechcalc print_hole: holes print ~0.2 under, ASSUMED until
 # the bore coupon is measured with the Kynup caliper)
@@ -50,13 +54,13 @@ SERVO_EAR_Z, SERVO_HOLE_SPC = 26.5, 49.5
 SERVO_X = 86.0
 SPLINE_OFF = 10.2                   # spline centre from the near end of the case
 
-KINGPIN_Y = 56.0                    # inboard of the bearing housing
+KINGPIN_Y = TRACK / 2 - 31.5        # inboard of the bearing housing (31.5 mm to the wheel centre)
 KNUCKLE_Z = (22.0, 36.0)            # barrel on the kingpin: spring gap above, droop room below
 BUMP_MM, DROOP_MM = 7.0, 5.0        # travel the checks prove clear; bump_stop sleeve enforces 7
 MAX_LOCK_DEG = 28.0                 # firmware endpoint; the sweep check proves it clears
-STEER_ARM = 14.0                    # kingpin to tie-rod eye
-STEER_ARM_OUT = 0.4                 # eye sits 0.4 x STEER_ARM outboard of straight-back (about 22 deg)
-HORN_R = 12.0                       # horn hole used, pointing FORWARD; drill the stock horn hole to 3.0 mm
+STEER_ARM = 16.0                    # kingpin to tie-rod eye (re-solved for the 164 mm track)
+STEER_ARM_OUT = 0.3                 # eye sits 0.3 x STEER_ARM outboard of straight-back (about 17 deg)
+HORN_R = 14.0                       # horn hole used, pointing FORWARD; drill the stock horn hole to 3.0 mm
 HORN_TOP_Z = 56.0                   # VERIFY: top face of the horn on the mounted servo
 EYE_T = 3.0                         # tie-rod eye thickness; both rods stack on one horn bolt
 BAR_H = 5.0                         # tie-rod bar depth away from the eyes (Euler buckling vs servo stall)
@@ -75,7 +79,7 @@ SPRING_X, SPRING_Y = -102.0, 34.0   # rear pod spring: clear of the brace, the p
 POD_BRACE_X = RA_X + 8              # brace sits between the plates, ahead of the axle
 
 BATT = (138.0, 47.0, 25.0)          # 2S hard case, VERIFY the pack you buy
-BATT_X0 = -66.0
+BATT_X0 = -70.0                     # 2 mm off the pivot lugs; leaves an 8 mm lead gap ahead of the servo block
 
 
 # ---------------------------------------------------------------- helpers
@@ -137,6 +141,9 @@ def pan():
         p -= bx(x - 1.5, x + 1.5, 4, 46, FLOOR_Z - 1, TOP + 1)
     for x in (-30, -5, 20, 45):
         p -= bx(x - 1.5, x + 1.5, -46, -30, FLOOR_Z - 1, TOP + 1)
+    # front corners narrowed: the 164 mm track swings the tires inside the old 52 mm half-width at lock
+    for s in (1, -1):
+        p -= bx(FA_X - 40, PAN_X1 + 1, *sorted((s * PAN_FRONT_HW, s * (HALF_W + 1))), FLOOR_Z - 1, TOP + RAIL_H + 1)
     # chamfer the nose so it climbs kerbs instead of digging in
     p -= Pos(PAN_X1, 0, FLOOR_Z) * Rot(0, 35, 0) * Box(12, 2 * HALF_W + 2, 6)
     return p
@@ -168,10 +175,38 @@ def splice_servo_block():
     for s in (1, -1):
         py = ymid + s * SERVO_HOLE_SPC / 2
         pa, pb = sorted((py - s * 4.0, py + s * 5.0))                       # thin side faces the case
-        post = bx(SERVO_X - 5, SERVO_X + 5, pa, pb, TOP, TOP + SERVO_EAR_Z)
+        post = bx(SERVO_X - 7, SERVO_X + 7, pa, pb, TOP, TOP + SERVO_EAR_Z)
         post -= insert(SERVO_X, py, TOP + SERVO_EAR_Z)
         b += post
+    # the servo lead leaves the bottom of the -Y end face, under the ear: tunnel through that post
+    b -= bx(SERVO_X - 4, SERVO_X + 4, y0 - 12, y0, TOP - 1, TOP + 9)
     return b
+
+
+# ---------------------------------------------------------------- body
+BODY_POST_X_F, BODY_POST_Y_F, BODY_POST_Y_R = 144.0, 20.0, 25.0
+BODY_CLIP = 9.0                     # post stands this far above the body skin: R-clip hole at +4
+
+
+@lru_cache(maxsize=1)
+def body():
+    """Venturi GT shell (bought, clear polycarbonate) with 7 mm post holes. (shell, windows, wing)."""
+    shell, windows, wing = bought.body_shell(FA_X, RA_X, R_W)
+    import math
+    for y in (BODY_POST_Y_F, -BODY_POST_Y_F):
+        shell -= cz(BODY_POST_X_F, y, 0, 200, 7.0)
+    # rear posts ride the pod: at the 4 deg stop their tops move fore-aft, so those holes are slots
+    xr = POD_BRACE_X + 5
+    swing = (bought.body_inner_z(shell, xr, BODY_POST_Y_R) - PIVOT_Z) * math.sin(math.radians(4))
+    for y in (BODY_POST_Y_R, -BODY_POST_Y_R):
+        shell -= cz(xr - swing, y, 0, 200, 7.0) + cz(xr + swing, y, 0, 200, 7.0) + bx(xr - swing, xr + swing, y - 3.5, y + 3.5, 0, 200)
+    return shell, windows, wing
+
+
+@lru_cache(maxsize=None)
+def body_post_top(x, y):
+    shell, _, _ = bought.body_shell(FA_X, RA_X, R_W)
+    return round(bought.body_inner_z(shell, x, y) + BODY_CLIP, 1)
 
 
 # ---------------------------------------------------------------- front end
@@ -193,9 +228,10 @@ def front_end():
             f -= insert(x, y, TOP, down=False)
     f += bx(150, 158, -40, 40, TOP, TOP + 12)                       # bumper
     # body posts (6 mm OD, clip holes every 5 mm drilled to taste)
-    for y in (-20, 20):
-        f += cz(144, y, TOP + 5, 90, 6.0)
-        f -= cz(144, y, TOP + 5, 91, 2.6)
+    for y in (-BODY_POST_Y_F, BODY_POST_Y_F):
+        top = body_post_top(BODY_POST_X_F, y)
+        f += cz(BODY_POST_X_F, y, TOP + 5, top, 6.0)
+        f -= cz(BODY_POST_X_F, y, TOP + 5, top + 1, 2.6)
     return f
 
 
@@ -217,9 +253,9 @@ def knuckle(side=1):
     s = side
     kz0, kz1 = KNUCKLE_Z
     k = cz(FA_X, s * KINGPIN_Y, kz0, kz1, 10)
-    y_in, y_out = sorted((s * 60, s * 73))
+    y_in, y_out = sorted((s * (KINGPIN_Y + 4), s * (KINGPIN_Y + 17)))
     k += cy(FA_X, AXLE_Z, y_in, y_out, 16)
-    yb0, yb1 = sorted((s * KINGPIN_Y, s * 64))
+    yb0, yb1 = sorted((s * KINGPIN_Y, s * (KINGPIN_Y + 8)))
     k += bx(FA_X - 5, FA_X + 5, yb0, yb1, kz0, kz1)
     # steering arm: back and angled outboard (steering() solves this to ~98% Ackermann
     # with the forward horn), post up to this side's tie-rod eye height
@@ -390,9 +426,10 @@ def pod_brace():
     for s in (1, -1):                                                # side inserts, bolts through the plates
         y0, y1 = sorted((s * POD_PLATE_Y, s * (POD_PLATE_Y - M3_INS_DEPTH)))
         b -= cy(bx0 + 5, 48, y0 - 0.01, y1, M3_INS)
-    for y in (-25, 25):                                              # rear body posts
-        b += cz(bx0 + 5, y, 52, 95, 6.0)
-        b -= cz(bx0 + 5, y, 52, 96, 2.6)
+    for y in (-BODY_POST_Y_R, BODY_POST_Y_R):                         # rear body posts
+        top = body_post_top(bx0 + 5, y)
+        b += cz(bx0 + 5, y, 52, top, 6.0)
+        b -= cz(bx0 + 5, y, 52, top + 1, 2.6)
     return b
 
 
@@ -441,6 +478,9 @@ def spur_clamp():
         c -= Pos(x, y1 + 0.01, z) * Rot(90, 0, 0) * nut
     return c
 
+HUB_COLLAR = 8.5                    # front: race shim + collar + hex puts the wheel centre on TRACK / 2
+
+
 def hex_hub():
     """Replaces the Hobbypark hubs, which need an M4-threaded axle tip that plain 5 mm rod
     does not have. 12 mm hex into the rim, collar inboard, D-bore + M3 bolt as a set screw
@@ -448,8 +488,8 @@ def hex_hub():
     import math
     from build123d import RegularPolygon, extrude
     hexa = extrude(RegularPolygon(12.0 / math.sqrt(3), 6, major_radius=True), 5.0)  # 12 AF
-    h = Pos(0, 0, 7) * hexa + cz(0, 0, 0, 7, 16.0)                     # collar under the hex
-    h -= cz(0, 0, -1, 13, 5.0 + 0.15 + HOLE_COMP)
+    h = Pos(0, 0, HUB_COLLAR) * hexa + cz(0, 0, 0, HUB_COLLAR, 16.0)   # collar under the hex
+    h -= cz(0, 0, -1, HUB_COLLAR + 6, 5.0 + 0.15 + HOLE_COMP)
     h -= cx(0, 3.5, 0, 9, M3_CLR).rotate(Axis.Z, 90)                   # radial M3 set bolt
     h -= bx(-3.3, 3.3, 3.6, 6.3, -1, 6.4)                              # nut slot (flats up), loads from below
     return h
@@ -474,16 +514,61 @@ def bump_stop():
 
 
 # ---------------------------------------------------------------- electronics trays
-def esp32_tray():
-    """Dev board (VERIFY ~51x28) on 4 standoff pads; zip-tie slots match the pan slots."""
-    x0, x1, y0, y1 = 12, 66, -46, -14
-    t = bx(x0, x1, y0, y1, TOP, TOP + 2)
-    for x in (x0 + 3, x1 - 3):
-        for y in (y0 + 3, y1 - 3):
-            t += cz(x, y, TOP + 2, TOP + 6, 6)
-            t -= cz(x, y, TOP + 1, TOP + 7, 2.5)
-    t += bx(x0, x1, y0, y0 + 1.6, TOP, TOP + 12)                     # splash wall outboard
-    return t
+ESP_C = (34.0, -30.0)               # PCB centre; USB end faces -X (rear), antenna overhang +X
+ESP_LEDGE_Z = TOP + 2 + 9.5         # header pins hang 8.5 mm under the PCB: leads are soldered, not Duponts
+ESP_WALL, ESP_CLR = 1.6, 0.3
+
+
+def _esp_inner():
+    L, W, _ = bought.DEVKIT
+    return (ESP_C[0] - L / 2 - 1.0 - ESP_CLR, ESP_C[0] + L / 2 + bought.DEVKIT_OVERHANG + ESP_CLR,
+            ESP_C[1] - W / 2 - ESP_CLR, ESP_C[1] + W / 2 + ESP_CLR)
+
+
+def _esp_bosses():
+    x0, x1, y0, y1 = _esp_inner()
+    return [(x0 - ESP_WALL - 1.9, ESP_C[1] + 9), (x1 + ESP_WALL + 1.9, ESP_C[1] - 9)]   # off each end: the
+    # long sides sit against the pan rail and the battery
+
+
+ESP_TOP = ESP_LEDGE_Z + 1.6 + 3.1 + 0.6                                # PCB + shield + 0.6 air
+
+
+def esp32_cradle():
+    """Well for an ESP32-DevKitC V4. The board has no mounting holes: it rests on two ledges
+    between the header rows and the lid's pad holds the module shield 0.2 mm above, so the
+    board is captured. The base sticks to the pan with servo tape."""
+    x0, x1, y0, y1 = _esp_inner()
+    w = ESP_WALL
+    L = bought.DEVKIT[0]
+    pcb0, pcb1 = ESP_C[0] - L / 2, ESP_C[0] + L / 2
+    c = bx(x0 - w, x1 + w, y0 - w, y1 + w, TOP, ESP_TOP)
+    c -= bx(x0, x1, y0, y1, TOP + 2, ESP_TOP + 1)
+    for xa, xb in ((pcb0 + 0.3, pcb0 + 3.0), (pcb1 - 3.0, pcb1 - 0.3)):   # under the PCB, inside the pin rows
+        c += bx(xa, xb, ESP_C[1] - 9, ESP_C[1] + 9, TOP + 2, ESP_LEDGE_Z)
+    c -= bx(x0 - w - 1, x0 + 0.1, ESP_C[1] - 5, ESP_C[1] + 5, ESP_LEDGE_Z - 0.5, ESP_TOP + 1)   # USB port
+    c -= bx(x0 - w - 1, x0 + 0.1, ESP_C[1] - 5, ESP_C[1] + 5, TOP + 3, TOP + 9)                 # lead exit
+    for x, y in _esp_bosses():
+        c += cz(x, y, TOP, ESP_TOP, 7) + bx(*sorted((x, x0 - w / 2 if x < x0 else x1 + w / 2)), y - 3.5, y + 3.5, TOP, ESP_TOP)
+        c -= insert(x, y, ESP_TOP)
+    return c
+
+
+def esp32_lid():
+    """Clamps the board: one pad stops 0.2 mm above the module shield. LED window; the antenna
+    end is plastic only (no metal near the PCB antenna)."""
+    x0, x1, y0, y1 = _esp_inner()
+    w = ESP_WALL
+    L = bought.DEVKIT[0]
+    mx1 = ESP_C[0] + L / 2 + bought.DEVKIT_OVERHANG
+    shield_top = ESP_LEDGE_Z + 1.6 + 3.1
+    lid = bx(x0 - w, x1 + w, y0 - w, y1 + w, ESP_TOP, ESP_TOP + 1.6)
+    lid += bx(mx1 - 24.0, mx1 - 8.0, ESP_C[1] - 6, ESP_C[1] + 6, shield_top + 0.2, ESP_TOP)
+    for x, y in _esp_bosses():
+        lid += cz(x, y, ESP_TOP, ESP_TOP + 1.6, 7)
+        lid -= cz(x, y, ESP_TOP - 1, ESP_TOP + 3, M3_CLR)
+    lid -= cz(ESP_C[0] - L / 2 + 10, ESP_C[1] + 8, ESP_TOP - 1, ESP_TOP + 3, 3.0)   # LED window
+    return lid
 
 
 # ---------------------------------------------------------------- reference bodies (not printed)
@@ -491,18 +576,40 @@ def wheel(x, y):
     return cy(x, AXLE_Z, y - W_W / 2, y + W_W / 2, 2 * R_W)
 
 
+def _wheel_at(x, s, centre_y):
+    tire, rim = bought.wheel()
+    place = Pos(x, centre_y, AXLE_Z) * Rot(-90 if s > 0 else 90, 0, 0)   # outer face outboard
+    return place * tire, place * rim
+
+
+def front_wheel_centre():
+    """Stack-up from the knuckle outward: outer 685 face, race shim (1), hub collar, then the hex
+    seats in the rim's pocket, whose inboard end is RIM_BOSS - RIM_OFFSET inboard of the rim centre."""
+    return KINGPIN_Y + 17 + 1.0 + HUB_COLLAR + (bought.RIM_BOSS - bought.RIM_OFFSET)
+
+
 def refs():
+    """Bought parts, detailed from published dimensions (see bought.py), in the assembled pose."""
     r = {}
-    # tire + rim lip only (the axle and hub pass through the middle); the sweeps use solid wheel()
-    r["wheels"] = Compound([wheel(x, s * TRACK / 2) - cy(x, AXLE_Z, s * TRACK / 2 - 14, s * TRACK / 2 + 14, 40)
-                            for x in (FA_X, RA_X) for s in (1, -1)])
-    r["battery"] = bx(BATT_X0, BATT_X0 + BATT[0], 1.2, 1.2 + BATT[1], TOP, TOP + BATT[2])
-    r["motor"] = cy(MOTOR_X, AXLE_Z, -POD_PLATE_Y, -POD_PLATE_Y + MOTOR_L, MOTOR_D)
-    r["spur"] = cy(RA_X, AXLE_Z, SPUR_FACE, SPUR_FACE + SPUR_W, SPUR_D) - cy(RA_X, AXLE_Z, SPUR_FACE - 1, SPUR_FACE + SPUR_W + 1, 12.2)
-    r["pinion"] = cy(MOTOR_X, AXLE_Z, -POD_PLATE_Y - POD_T - 1, -POD_PLATE_Y - POD_T - 11, PINION_T / DP * 25.4)
-    sx, sy, sz = SERVO
-    r["servo"] = bx(SERVO_X - sx / 2, SERVO_X + sx / 2, SPLINE_OFF - sy, SPLINE_OFF, TOP, TOP + sz)
-    r["esc"] = bx(-42, 0, -46, -10, TOP, TOP + 33)                   # VERIFY ESC size
+    tires, rims = [], []
+    for x in (FA_X, RA_X):
+        for s in (1, -1):
+            tr, rm = _wheel_at(x, s, s * TRACK / 2)
+            tires.append(tr)
+            rims.append(rm)
+    r["tires"], r["rims"] = Compound(tires), Compound(rims)
+    r["battery"] = Pos(BATT_X0, 1.2, TOP) * bought.battery()
+    r["motor"] = Pos(MOTOR_X, -POD_PLATE_Y, AXLE_Z) * Rot(-90, 0, 0) * bought.motor()
+    r["spur"] = Pos(RA_X, SPUR_FACE, AXLE_Z) * Rot(-90, 0, 0) * bought.gear(SPUR_T, DP, SPUR_W, 12.2)
+    r["pinion"] = (Pos(MOTOR_X, -POD_PLATE_Y - POD_T - 1, AXLE_Z) * Rot(90, 0, 0) *
+                   bought.gear(PINION_T, DP, 5.0, 3.17, hub_d=6.5, hub_l=4.5))
+    case, horn = bought.servo(HORN_TOP_Z - TOP, SPLINE_OFF, HORN_R)
+    r["servo"] = Pos(SERVO_X, SPLINE_OFF, TOP) * case
+    r["servo_horn"] = Pos(SERVO_X, SPLINE_OFF, TOP) * horn
+    r["esc"] = Pos(ESC_X0, ESC_Y0, TOP) * bought.esc()
+    board, pins = bought.esp32_devkit()
+    r["esp32"] = Pos(ESP_C[0], ESP_C[1], ESP_LEDGE_Z) * board
+    r["esp32_pins"] = Pos(ESP_C[0], ESP_C[1], ESP_LEDGE_Z) * pins
     r["rear_axle"] = (cy(RA_X, AXLE_Z, -TRACK / 2 - 18, TRACK / 2 + 18, 5) -
                       bx(RA_X - 3, RA_X + 3, -TRACK / 2 - 19, TRACK / 2 + 19, AXLE_Z + AXLE_FLAT, AXLE_Z + 3))
     # 5 mm shaft collars: left outboard of the left plate, right outboard of the spool
@@ -510,7 +617,29 @@ def refs():
     collar = lambda y0, y1: cy(RA_X, AXLE_Z, y0, y1, 10) - cy(RA_X, AXLE_Z, y0 - 1, y1 + 1, 5.05)
     r["collars"] = Compound([collar(POD_PLATE_Y + POD_T + 1.0, POD_PLATE_Y + POD_T + 6.0), collar(y_sp - 5, y_sp)])
     r["kingpins"] = Compound([cz(FA_X, s * KINGPIN_Y, KP_Z0, KP_Z1, 3) for s in (1, -1)])
+    r["body"], r["windows"], r["wing"] = body()
     return r
+
+
+ESC_X0, ESC_Y0 = -38.0, -44.0       # QuicRun 10BL60 G2, fan up; motor leads leave -X, battery leads +X
+
+
+def leads():
+    """Indicative 14 AWG routes (3.0 mm OD silicone). Flexible, so not in the overlap check."""
+    ex, ey, ez = ESC_X0, ESC_Y0 + bought.ESC[1] / 2, TOP + 8
+    motor_end = (MOTOR_X, -POD_PLATE_Y + bought.MOTOR["l"] + 6, AXLE_Z)
+    out = []
+    for i, dy in enumerate((-4, 0, 4)):                                # motor A B C: slack loop over the pivot
+        out.append(bought.tube([(ex, ey + dy, ez), (-95, -30 + dy, 24), (-118, -2 + dy, 40),
+                                (motor_end[0] + 8 * (i - 1), motor_end[1] + 4, 40),
+                                (motor_end[0] + 8 * (i - 1), motor_end[1], AXLE_Z + 6)], 3.0))
+    bx1 = BATT_X0 + BATT[0]
+    for dz, y in ((0, 30), (4, 22)):                                     # pack to ESC, between pack and servo block
+        out.append(bought.tube([(bx1, y, TOP + 12 + dz), (bx1 + 3, y, TOP + 12 + dz), (bx1 + 3, -8, TOP + 12 + dz),
+                                (2, -8, TOP + 12 + dz), (ex + bought.ESC[0] + 3, ey, TOP + 8 + dz),
+                                (ex + bought.ESC[0], ey, TOP + 8 + dz)], 3.0))
+    xt60 = bx(30, 46, -12, -4, TOP + 7, TOP + 21)                        # XT60 pair in the run
+    return Compound(out + [xt60])
 
 
 # ---------------------------------------------------------------- build
@@ -531,7 +660,8 @@ def parts():
         "pod_brace": (pod_brace(), "PLA, flat"),
         "spool": (spool(), "PETG, flange down, 100% infill"),
         "spur_clamp": (spur_clamp(), "PETG, flat, nut pockets up"),
-        "esp32_tray": (esp32_tray(), "PLA, flat"),
+        "esp32_cradle": (esp32_cradle(), "PLA, base down"),
+        "esp32_lid": (esp32_lid(), "PLA, top face down"),
         "tie_rod_L_horn": (tie_rod_half(1, "horn"), "PETG, flat, 100% infill"),
         "tie_rod_L_knuckle": (tie_rod_half(1, "knuckle"), "PETG, flat, 100% infill"),
         "tie_rod_R_horn": (tie_rod_half(-1, "horn"), "PETG, flat, 100% infill"),
@@ -557,7 +687,7 @@ def checks(ps, r):
     assert gap(r["battery"], solid["splice_servo_block"]) > 0.5, "battery hits servo block"
     assert gap(r["servo"], r["battery"]) > 0.5, "servo hits battery"
     for k in ("pan_rear", "pan_front", "front_end"):
-        assert gap(r["wheels"], solid[k]) > 3, f"wheel rubs {k}"
+        assert gap(r["tires"], solid[k]) > 3, f"wheel rubs {k}"
     assert gap(r["spur"], solid["pod_plate_R_motor"]) > 0.5, "spur rubs motor plate"
     assert gap(r["esc"], r["battery"]) > 0.5, "esc hits battery"
     # every printed part fits the Ender 3 V3 bed in at least one orientation
@@ -583,16 +713,23 @@ def checks(ps, r):
     assert p_cr / f_stall >= 2.0, f"tie rod buckles under servo stall: P_cr {p_cr:.0f} N vs {f_stall:.0f} N"
     # nothing overlaps anything in the assembled pose: printed parts AND the bought parts
     # (axle, kingpins, collars, motor, spur, pinion, servo, ESC, battery, wheels)
-    allb = {k: v for k, v in solid.items() if k != "hex_hub_x4"}
+    # front wheel stack-up: knuckle bearing, race shim, hub collar and rim hex put the wheel where TRACK says
+    assert abs(front_wheel_centre() - TRACK / 2) < 0.5, f"front wheel centre {front_wheel_centre():.1f} vs {TRACK / 2}"
+    # body posts reach through the shell, clip hole above the skin
+    for x, y in ((BODY_POST_X_F, BODY_POST_Y_F), (POD_BRACE_X + 5, BODY_POST_Y_R)):
+        assert body_post_top(x, y) - BODY_CLIP > TOP + 30, f"body skin implausibly low at {x}, {y}"
+    allb = {k: v for k, v in solid.items() if k not in ("hex_hub_x4", "race_shims_x4", "spring_shims_x3")}
     allb.update({"ref_" + k: v for k, v in r.items()})
     names = list(allb)
     for i, a in enumerate(names):
         for b in names[i + 1:]:
+            if {a, b} == {"ref_spur", "ref_pinion"}:                 # meshing teeth touch by design; CENTRE sets them
+                continue
             v = (allb[a] & allb[b]).volume
             assert v < 0.01, f"{a} overlaps {b} by {v:.2f} mm3"
     # steering sweep: wheel + knuckle turn about each kingpin to full lock both ways
     fixed = [solid[k] for k in ("front_end", "upper_arm_L", "upper_arm_R", "pan_front",
-                                "splice_servo_block")]
+                                "splice_servo_block")] + [r["body"]]
     worst = 99.0
     for s, kn in ((1, "knuckle_L"), (-1, "knuckle_R")):
         whl = wheel(FA_X, s * TRACK / 2)
@@ -633,7 +770,7 @@ def checks(ps, r):
     assert travel > 0.5, f"front travel clearance {travel:.2f} mm"
     # rear pod swings about the pivot: +-4 deg is about +-7 mm at the axle
     pod = [solid[k] for k in ("pod_floor", "pod_plate_L", "pod_plate_R_motor", "pod_brace", "spool")]
-    pod += [r["motor"], r["spur"], r["wheels"]]
+    pod += [r["motor"], r["spur"], r["tires"], r["rims"]]
     pax = Axis((PIVOT_X, 0, PIVOT_Z), (0, 1, 0))
     lugs = [bx(PAN_X0, PIVOT_X + 6, *sorted((s * LUG_Y0, s * (LUG_Y0 + LUG_T))), TOP, PIVOT_Z + 6) for s in (1, -1)]
     pan_nolug = solid["pan_rear"] - lugs[0] - lugs[1]
@@ -648,7 +785,8 @@ def checks(ps, r):
           f"steering sweep +-{MAX_LOCK_DEG} deg min gap {worst:.1f} mm, front travel +{BUMP_MM}/-{DROOP_MM} "
           f"min gap {travel:.1f} mm, pod swing +-4 deg min gap {pod_gap:.1f} mm "
           f"tie rods at lock min gap {rod_gap:.1f} mm, steering {st} "
-          f"(NOT tested: real rim hex depth/offset, spring solid height, tie rods during bump)")
+          f"front wheel centre {front_wheel_centre():.1f} mm, body posts F {body_post_top(BODY_POST_X_F, BODY_POST_Y_F)} R {body_post_top(POD_BRACE_X + 5, BODY_POST_Y_R)} "
+          f"(NOT tested: real rim hex depth, spring solid height, tie rods during bump, body vs pod swing, lead routes)")
 
 
 # rotation (deg about X, then Y, then Z) that puts each part in its slicer orientation
@@ -712,7 +850,7 @@ if __name__ == "__main__":
     coupon = calibration_coupon()
     export_stl(coupon, str(OUT / "print" / "calibration_coupon.stl"))
     export_step(coupon, str(OUT / "print" / "calibration_coupon.step"))
-    asm = Compound([s for k, (s, _) in ps.items() if "_x" not in k] + list(r.values()))  # loose small parts left out
+    asm = Compound([s for k, (s, _) in ps.items() if "_x" not in k] + list(r.values()) + [leads()])  # loose small parts left out
     export_step(asm, str(OUT / "wk10_assembly.step"))
     (OUT / "manifest.json").write_text(json.dumps(manifest, indent=1))
     print(json.dumps(manifest, indent=1))

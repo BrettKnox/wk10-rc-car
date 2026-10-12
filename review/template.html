@@ -17,7 +17,7 @@
   --good: #0a7d0a;
   --warn-bg: #fff4d6;
   --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;   /* validated chart slots, light */
-  --g-chassis: #2a78d6; --g-front: #eb6834; --g-steering: #1baf7a; --g-rear: #4a3aa7; --g-bought: #9aa3ab;
+  --g-chassis: #2a78d6; --g-front: #eb6834; --g-steering: #1baf7a; --g-rear: #4a3aa7; --g-electronics: #2a2d31; --g-drivetrain: #4a5058; --g-wheels: #2b2d30; --g-body: #b9c4cd;
   --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
   --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
@@ -26,13 +26,13 @@
   --paper: #0f1418; --sheet: #161d23; --ink: #e3e8ec; --ink-2: #9aa7b3; --rule: #2a333b;
   --redline: #e5694f; --blue: #6fa3e0; --good: #3fbf3f; --warn-bg: #3a3014;
   --s1: #3987e5; --s2: #d95926; --s3: #199e70;
-  --g-chassis: #3987e5; --g-front: #d95926; --g-steering: #199e70; --g-rear: #9085e9; --g-bought: #6b7682;
+  --g-chassis: #3987e5; --g-front: #d95926; --g-steering: #199e70; --g-rear: #9085e9; --g-electronics: #8a929b; --g-drivetrain: #9aa3ab; --g-wheels: #6b7682; --g-body: #8d99a4;
   color-scheme: dark } }
 :root[data-theme="dark"] {
   --paper: #0f1418; --sheet: #161d23; --ink: #e3e8ec; --ink-2: #9aa7b3; --rule: #2a333b;
   --redline: #e5694f; --blue: #6fa3e0; --good: #3fbf3f; --warn-bg: #3a3014;
   --s1: #3987e5; --s2: #d95926; --s3: #199e70;
-  --g-chassis: #3987e5; --g-front: #d95926; --g-steering: #199e70; --g-rear: #9085e9; --g-bought: #6b7682;
+  --g-chassis: #3987e5; --g-front: #d95926; --g-steering: #199e70; --g-rear: #9085e9; --g-electronics: #8a929b; --g-drivetrain: #9aa3ab; --g-wheels: #6b7682; --g-body: #8d99a4;
   color-scheme: dark }
 
 * { box-sizing: border-box }
@@ -186,10 +186,11 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
   <h1>WK-10, a printable 1/10 on-road pan car</h1>
   <p class="lede">Rear-wheel drive, pivoting rear pod with a locked spool, sliding-pillar front suspension, and an ESP32 that drives it from a phone, a Python script or a second ESP32 used as a handheld transmitter. Every printed part is modelled parametrically in build123d and fits a 220 × 220 mm bed. It is designed and checked in CAD; nothing has been printed or run yet. This packet is for review before building.</p>
   <div class="chips">
-    <span class="chip ok">Parametric CAD, 24 printed parts</span>
+    <span class="chip ok">Parametric CAD, 25 printed parts</span>
+    <span class="chip ok">Bought parts modelled from maker dimensions</span>
     <span class="chip ok">Automated fit and kinematic checks</span>
     <span class="chip ok">Firmware compiles, self-tests pass</span>
-    <span class="chip ok">3 independent code/design reviews</span>
+    <span class="chip ok">3 independent reviews + 2 model passes</span>
     <span class="chip todo">Not yet printed</span>
     <span class="chip todo">Not yet run on hardware</span>
   </div>
@@ -200,10 +201,10 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
 <section id="model">
   <div class="eyebrow">WK10-01 · 3D model</div>
   <h2>Interactive model</h2>
-  <p>Drag to orbit, scroll or pinch to zoom, right-drag to pan. Click a part to see what it is, what it is printed from and how much it weighs. The section plane cuts the car so you can see inside the knuckles, the pod and the pan joint. Bought parts (tires, motor, gears, servo, ESC, battery, axle, kingpins, collars) are simplified envelopes.</p>
+  <p>Drag to orbit, scroll or pinch to zoom, right-drag to pan. Click a part to see what it is. The body is drawn see-through; untick it to work on the chassis. Bought parts (tires, rims, motor, ESC, servo, ESP32 board, battery, gears, leads, body) are modelled from the makers' published dimensions, so their mounting features are real; the numbers nobody publishes (rim hex depth, motor hole pattern, the body's exact hood height) are flagged in section 12. The section plane cuts the car so you can see inside the knuckles, the pod and the ESP32 cradle.</p>
   <div class="vbar" id="vgroups"></div>
   <div class="panel viewer" id="viewer">
-    <div class="vhint" id="vhint">Loading 30 meshes…</div>
+    <div class="vhint" id="vhint">Loading the model…</div>
     <div class="pick" id="pick" hidden></div>
   </div>
   <div class="vbar">
@@ -233,15 +234,17 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
   <div class="tablewrap"><table>
     <thead><tr><th>Area</th><th>Choice</th><th>Reason</th></tr></thead>
     <tbody>
-      <tr><td>Class</td><td>1/10 on-road pan car, 257 mm wheelbase, 175 mm track</td><td>The owned tires are 1/10 on-road (67 mm, 12 mm hex). 257 mm matches the Tamiya TT-01/TT-02 and Sakura D5, so standard 190 mm bodies fit.</td></tr>
+      <tr><td>Class</td><td>1/10 on-road pan car, 257 mm wheelbase, 164 mm track, 190 mm over the tires</td><td>The owned tires are 1/10 on-road (67 mm, 12 mm hex). 257 mm and 190 mm match the 1/10 GT bodies made for 190 mm pan cars (Venturi GT, Bittydesign Ahura and P-GT3R). The first layout used a 175 mm track, 201 mm over the tires, which no 190 mm body covers. Standard 190 mm bodies fit.</td></tr>
       <tr><td>Rear</td><td>Pivoting pod, solid 5 mm axle, locked spool</td><td>Printed differentials are the most reported failure in open printable cars (PLA/PETG diffs soften, seize and click). A pod with a spool has no CV joints and one axle. It pushes a little in tight corners.</td></tr>
       <tr><td>Front</td><td>Sliding-pillar kingpin, 3 mm stainless pin, coil spring above the knuckle, printed bump stop</td><td>Uses owned rods and springs; the classic 1/12 pan-car front end. Travel +7 / −5 mm.</td></tr>
-      <tr><td>Steering</td><td>Servo horn forward, both tie rods on one bolt 12 mm out; 14 mm knuckle arms angled about 22° outboard</td><td>Solved with a branch-tracked linkage solver: 96% Ackermann both ways. An earlier layout that looked right on paper (rearward horn, straight arms) was anti-Ackermann; the check now fails it.</td></tr>
-      <tr><td>Tie rods</td><td>Printed PETG, two halves joined by a cut M3 stud in heat-set inserts</td><td>Replaces ball links. Loose 3.6 mm eyes on M3 bolts tolerate the tilt from 7 mm of bump over a 64 mm rod. 5 mm deep bar for buckling margin.</td></tr>
+      <tr><td>Steering</td><td>Servo horn forward, both tie rods on one bolt 14 mm out; 16 mm knuckle arms angled about 17° outboard</td><td>Solved with a branch-tracked linkage solver and re-solved for the 164 mm track: 98% Ackermann both ways. An earlier layout that looked right on paper (rearward horn, straight arms) was anti-Ackermann; the check now fails it.</td></tr>
+      <tr><td>Tie rods</td><td>Printed PETG, two halves joined by a cut M3 stud in heat-set inserts</td><td>Replaces ball links. Loose 3.6 mm eyes on M3 bolts tolerate the tilt from 7 mm of bump over a 57 mm rod. 5 mm deep bar for buckling margin.</td></tr>
       <tr><td>Motor</td><td>3650 brushless can behind the rear axle</td><td>Ahead of the axle it collided with the pod pivot. Behind, it puts 58% of the mass on the driven wheels, which matters because launch is traction-limited.</td></tr>
       <tr><td>Pan</td><td>Split at X = 86, joined by a block that also carries the servo</td><td>A 240 mm pan does not fit a 220 mm bed, even diagonally. The joint block does two jobs.</td></tr>
       <tr><td>Hubs</td><td>Printed 12 mm hex hubs with an M3 set bolt on a ground flat</td><td>The owned aluminium hubs clamp with an M4 nut and need a threaded axle tip, which plain 5 mm rod does not have.</td></tr>
       <tr><td>Control</td><td>ESP32 as its own Wi-Fi access point (phone joystick, tuning page, HTTP API) plus ESP-NOW from a second ESP32</td><td>No radio purchase. Every input goes through one failsafe and one arming gate.</td></tr>
+      <tr><td>Body</td><td>PROTOform Venturi GT, 190 mm polycarbonate, posts on the front end and the rear pod</td><td>Lexan is about 90 g; a printed shell of the same size would weigh twice that and crack on the first hit. Post heights are computed from the shell, so the posts end 9 mm above the skin. The rear posts move with the pod, so the rear holes are fore-aft slots.</td></tr>
+      <tr><td>ESP32 mount</td><td>Printed cradle and lid, board on end ledges, leads soldered to the pins</td><td>The DevKitC has no mounting holes and its header pins hang 8.5 mm under the board, so the old flat tray could not hold it. The lid pad stops 0.2 mm above the module shield, which captures the board without screws through it. Nothing metal sits near the PCB antenna.</td></tr>
     </tbody></table></div>
 </section>
 
@@ -259,13 +262,13 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
     <thead><tr><th>Metric</th><th class="n">Value</th><th>Note</th></tr></thead>
     <tbody>
       <tr><td>Top speed</td><td class="n">52.6 km/h</td><td>3600 Kv on 2S, 6.21:1, 67 mm tires, C<sub>d</sub>A 0.0042 m²</td></tr>
-      <tr><td>0 to 30 km/h</td><td class="n">1.33 s</td><td>Traction-limited: about 8 N of rear grip against 25 N of available thrust</td></tr>
-      <tr><td>Launch</td><td class="n">0.64 g</td><td>Firmware ramps throttle at 4 full-scale per second to stay near the grip limit</td></tr>
+      <tr><td>0 to 30 km/h</td><td class="n">1.38 s</td><td>Traction-limited: about 7.7 N of rear grip (56% of 1.23 kg on the rear) against 25 N of available thrust</td></tr>
+      <tr><td>Launch</td><td class="n">0.62 g</td><td>Firmware ramps throttle at 4 full-scale per second to stay near the grip limit</td></tr>
       <tr><td>Peak current</td><td class="n">60 A</td><td>ESC limit; the 2S 80C pack can source about 416 A</td></tr>
-      <tr><td>Motor heat, continuous</td><td class="n">18 W</td><td>Why brushless: a brushed 540 puts about 48 W into the PETG motor plate</td></tr>
+      <tr><td>Motor heat, continuous</td><td class="n">24.5 W</td><td>Why brushless: a brushed 540 would put about twice that into the PETG motor plate</td></tr>
       <tr><td>Runtime at 35 A continuous</td><td class="n">8.9 min</td><td>Pessimistic; part-throttle runs last longer</td></tr>
-      <tr><td>Lateral tip-over</td><td class="n">2.92 g</td><td>CG 30 mm high on a 175 mm track: it slides long before it rolls</td></tr>
-      <tr><td>Weight split</td><td class="n">42 / 58</td><td>Front / rear, from the mass budget</td></tr>
+      <tr><td>Lateral tip-over</td><td class="n" id="v-tip"></td><td id="v-tip-note"></td></tr>
+      <tr><td>Weight split</td><td class="n" id="v-split"></td><td>Front / rear, every part's mass at its own centroid</td></tr>
     </tbody></table></div>
 </section>
 
@@ -280,9 +283,9 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
       <tr><td>Front lower arm (PETG)</td><td>20 × 6 cantilever, 23 mm</td><td>30 N at the kingpin (about 10 g on a front corner)</td><td class="n">5.8 MPa</td><td class="n">0.16 mm</td><td class="n">7.0</td></tr>
       <tr><td>Kingpin (Ø3 stainless)</td><td>Simply supported between the arms, 41 mm span</td><td>30 N lateral at mid-span</td><td class="n">103 MPa</td><td class="n">0.05 mm</td><td class="n">2.4</td></tr>
       <tr><td>Rear axle (Ø5 stainless)</td><td>Cantilever from the pod bearing to the wheel, 42 mm</td><td>35 N vertical at the wheel (about 10 g on a rear corner)</td><td class="n">105 MPa</td><td class="n">0.13 mm</td><td class="n">2.4</td></tr>
-      <tr><td>Tie rod (PETG)</td><td>Euler buckling, pinned-pinned, 63.8 mm, 6 × 5 bar</td><td>Servo stall push: 1.08 N·m on a 12 mm horn = 90 N</td><td class="n">P<sub>cr</sub> 318 N</td><td class="n">n/a</td><td class="n">3.5</td></tr>
+      <tr><td>Tie rod (PETG)</td><td>Euler buckling, pinned-pinned, 56.7 mm, 6 × 5 bar</td><td>Servo stall push: 1.08 N·m on a 14 mm horn = 77 N</td><td class="n">P<sub>cr</sub> 403 N</td><td class="n">n/a</td><td class="n">5.2</td></tr>
     </tbody></table></div>
-  <div class="note"><b>Found while building this packet:</b> the tie rods were first drawn with a 6 × 3 mm bar, which buckles at about 69 N, below a stalled MG996R's 90 N push. A jammed wheel could have folded one. The bar is now 5 mm deep away from the eyes (it still prints flat) and the CAD build fails if the buckling factor drops under 2.</div>
+  <div class="note"><b>Found while building this packet:</b> the tie rods were first drawn with a 6 × 3 mm bar, which buckles at about 69 N, below a stalled MG996R's push. A jammed wheel could have folded one. The bar is now 5 mm deep away from the eyes (it still prints flat), the rod is shorter after the track change, and the CAD build fails if the buckling factor drops under 2.</div>
 </section>
 
 <section id="fits">
@@ -327,12 +330,13 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
       <tr><td>LiPo bag</td><td><a href="https://www.amazon.com/dp/B0FWBMK87X">Zeee 28 × 22 cm</a></td><td>Charge and store</td><td class="n">$6.29</td></tr>
       <tr><td>Pinions</td><td>ShareGoo 48P 13T to 17T set (Amazon B09FGC6JV4)</td><td>Gearing range; 14T default</td><td class="n">$11.49</td></tr>
       <tr><td>Spur</td><td><a href="https://www.amazon.com/dp/B0006O1QW6">Kimbrough #148 87T 48P</a></td><td>Bolt pattern unpublished; the printed clamp ring is the drill template</td><td class="n">$9.13</td></tr>
-      <tr><td>5 mm rod</td><td>304 stainless 5 × 300 mm, 5 pcs (Amazon B0D5D2H1KJ)</td><td>Rear axle 211 mm, front stubs 46 mm</td><td class="n">$8.99</td></tr>
+      <tr><td>5 mm rod</td><td>304 stainless 5 × 300 mm, 5 pcs (Amazon B0D5D2H1KJ)</td><td>Rear axle 200 mm, front stubs 46 mm</td><td class="n">$8.99</td></tr>
       <tr><td>Shaft collars</td><td>5 mm bore, 10 mm OD, 12 pcs (Amazon B0F9P5CNSL)</td><td>Wheel and axle retention</td><td class="n">$5.99</td></tr>
       <tr><td>Battery strap</td><td>Hobbypark 20 × 200 mm, 6 pcs (Amazon B08HHHFMCJ)</td><td></td><td class="n">$6.97</td></tr>
-      <tr><td>Body</td><td><a href="https://www.amazon.com/dp/B0CDZ1FSXN">PROTOform Venturi GT</a></td><td>191 mm wide, 258 mm wheelbase, clear</td><td class="n">$29.99</td></tr>
+      <tr><td>Body</td><td><a href="https://www.amazon.com/dp/B0CDZ1FSXN">PROTOform Venturi GT</a></td><td>190 mm class (191 wide), 430 long, 258 mm wheelbase, wing included, 85 to 90 g painted</td><td class="n">$29.99</td></tr>
+      <tr><td>Body clips</td><td><a href="https://www.walmart.com/ip/37293444">Traxxas 1834 body clips (12)</a></td><td>R-clips for the four posts; the body has none</td><td class="n">$6.95</td></tr>
     </tbody>
-    <tfoot><tr><td colspan="3">Total (about $277.17 with 7.5% Duval County tax)</td><td class="n">$257.83</td></tr></tfoot></table></div>
+    <tfoot><tr><td colspan="3">Total (about $284.64 with 7.5% Duval County tax; polycarbonate paint is optional and not included)</td><td class="n">$264.78</td></tr></tfoot></table></div>
   <h3>Already on hand</h3>
   <div class="tablewrap"><table>
     <thead><tr><th>Part</th><th class="n">Qty</th><th>Used for</th></tr></thead>
@@ -404,9 +408,9 @@ flowchart LR
       <tr><td>Python client vs fake car</td><td>Arms, aborts on disarm, refuses calibration, always stops</td><td>n/a</td><td><span class="pass">pass 2026-10-12</span></td></tr>
       <tr><td>Calibration coupon</td><td>685ZZ light press in the 11.2 hole; set HOLE_COMP</td><td>11.0 printed</td><td><span class="todo">to do</span></td></tr>
       <tr><td>Failsafe</td><td>Motor stops within 250 ms on finger up, Wi-Fi off, script killed, ESP32 reset while held, transmitter unplugged; no restart until released and pressed</td><td>≤ 250 ms</td><td><span class="todo">to do</span></td></tr>
-      <tr><td>Steering</td><td>No servo buzz at lock; no wheel contact at lock with the suspension compressed</td><td>35° servo for 28° lock</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>Steering</td><td>No servo buzz at lock; no wheel contact at lock with the suspension compressed, body on</td><td>33° servo for 28° lock</td><td><span class="todo">to do</span></td></tr>
       <tr><td>Rear ride height</td><td>Pan rear edge 5 mm off a flat table, car on its wheels with battery</td><td>9 N on the spring</td><td><span class="todo">to do</span></td></tr>
-      <tr><td>Heat, 5 minute run</td><td>Motor and motor plate under 60 °C, ESC under 70 °C</td><td>18 W motor heat</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>Heat, 5 minute run</td><td>Motor and motor plate under 60 °C, ESC under 70 °C</td><td>24.5 W motor heat</td><td><span class="todo">to do</span></td></tr>
       <tr><td>Top speed</td><td>Timed 20 m pass</td><td>52.6 km/h on 14T</td><td><span class="todo">to do</span></td></tr>
       <tr><td>Runtime</td><td>Minutes to the ESC low-voltage cutoff</td><td>≥ 8.9 min</td><td><span class="todo">to do</span></td></tr>
     </tbody></table></div>
@@ -418,10 +422,11 @@ flowchart LR
   <div class="tablewrap"><table>
     <thead><tr><th>Issue</th><th>Impact</th><th>Plan</th></tr></thead>
     <tbody>
-      <tr><td>Rim hex depth and offset not published</td><td>Hub and collar stack-up at each wheel is unverified</td><td>Measure a rim; adjust hub collar length</td></tr>
-      <tr><td>Listing dimensions (servo ears 49.5 / 26.5, horn height 56, spur thickness 6, motor holes 25)</td><td>Mounting holes may be off by a millimetre or two</td><td>Measure on arrival; each is one parameter</td></tr>
+      <tr><td>Rim hex depth not published</td><td>The front wheel stack-up check assumes a 5 mm pocket in an 8 mm boss; a different rim moves the wheel in or out</td><td>Measure a rim; HUB_COLLAR is the one knob that brings the wheel back to 82 mm</td></tr>
+      <tr><td>Body hood and deck heights not published</td><td>The shell is a stand-in sized to the published 430 × 191 × 258 WB; post heights and clearances are only as good as it</td><td>Put the shell on the car before trimming the posts; the posts are printed 9 mm proud of the modelled skin, so they get cut down, never extended</td></tr>
+      <tr><td>Listing dimensions (servo ears 49.5 / 26.6, horn height, spur thickness 6, motor holes 25 inferred from the 540 standard)</td><td>Mounting holes may be off by a millimetre or two</td><td>Measure on arrival; each is one parameter</td></tr>
       <tr><td>HOLE_COMP = 0.2 mm assumed</td><td>Bearing and pin fits may be loose or tight</td><td>Print the coupon first</td></tr>
-      <tr><td>Bump steer 1.47° toe-out at full 7 mm bump</td><td>Some darting over bumps</td><td>Inherent to sliding pillar with a central servo; travel is short on smooth pavement</td></tr>
+      <tr><td>Bump steer 1.49° toe-out at full 7 mm bump</td><td>Some darting over bumps</td><td>Inherent to sliding pillar with a central servo; travel is short on smooth pavement</td></tr>
       <tr><td>No dampers (spring friction only, front and rear)</td><td>Pitch and bounce oscillation on rough ground</td><td>Grease on the kingpins; oil damper on the pod later</td></tr>
       <tr><td>Locked rear axle</td><td>Push in tight corners</td><td>v2: bought steel 1/10 gear diff in place of the spool</td></tr>
       <tr><td>Rear spring rate unknown until chosen</td><td>Ride height and pod bottoming</td><td>27 mm+ free, about 3 N/mm; set height with printed shims; CAD proves 1.3 mm clearance at 4° swing</td></tr>
@@ -429,7 +434,7 @@ flowchart LR
       <tr><td>Firmware not run on hardware</td><td>Timing and radio behaviour unproven</td><td>Bench bring-up with wheels off the ground</td></tr>
     </tbody></table></div>
   <h2 style="margin-top:28px">Review log</h2>
-  <p>The design was reviewed three times by an independent agent that read the code and model without the author's notes, plus once more while this packet was assembled. Every finding below was fixed and is covered by a check where one is possible.</p>
+  <p>The design was reviewed three times by an independent agent that read the code and model without the author's notes, again while this packet was assembled, and a fourth time when every bought part was replaced with a model built from its maker's dimensions. The detailed parts found what the plain boxes had hidden. Every finding below was fixed and is covered by a check where one is possible.</p>
   <div class="tablewrap"><table>
     <thead><tr><th>Round</th><th>Severity</th><th>Finding</th><th>Fix</th></tr></thead>
     <tbody>
@@ -442,6 +447,10 @@ flowchart LR
       <tr><td>2</td><td><span class="sev p1">P1</span></td><td>Rear spring could not hold ride height (pan near the ground); pivot clamped solid; knuckle print orientation stood on 3.5 mm²</td><td>Spring spec + shims + ground check; 0.3 mm float; corrected orientation (102 mm²)</td></tr>
       <tr><td>3</td><td><span class="sev p1">P1</span></td><td>Watchdog reset slower than stated (core dump); OTA flash erase could trip it; calibration could reactivate after 24.9 days uptime</td><td>Watchdog ISR cuts the ESC pin; relaxed timeout during flash writes; calibration clears on expiry</td></tr>
       <tr><td>Packet</td><td><span class="sev p1">P1</span></td><td>Tie rod 6 × 3 mm bar buckles at about 69 N, below the servo's 90 N stall push</td><td>5 mm deep bar, SF 3.5, build-time check</td></tr>
+      <tr><td>Model</td><td><span class="sev p0">P0</span></td><td>The 175 mm track made the car 201 mm over the tires; the 190 mm body in the parts list could not cover the wheels</td><td>Track 164 mm, kingpins and knuckles moved in, steering re-solved (98% Ackermann), pan front corners narrowed</td></tr>
+      <tr><td>Model</td><td><span class="sev p1">P1</span></td><td>ESP32 tray held the board 4 mm up, but the DevKitC's header pins hang 8.5 mm under it, and the board has no mounting holes</td><td>Cradle with end ledges between the pin rows, lid that captures the module shield, soldered leads</td></tr>
+      <tr><td>Model</td><td><span class="sev p1">P1</span></td><td>No body, no body clips, and no check that a body clears the wheels</td><td>Venturi GT shell modelled; arches trimmed and stretched for lock; hood clears +7 mm bump at full lock; clips added to the BOM</td></tr>
+      <tr><td>Model</td><td><span class="sev p2">P2</span></td><td>Servo lead exits under the rear ear post; front wheel position along the axle never checked</td><td>Lead tunnel through the post; front stack-up check (82.0 mm)</td></tr>
     </tbody></table></div>
 </section>
 
@@ -478,15 +487,18 @@ const fmt = (v, d = 1) => Number(v).toFixed(d);
 const totalPrinted = D.parts.reduce((s, p) => s + p.mass_g * p.qty, 0);
 const st = D.steering;
 const specs = [
-  ['Wheelbase / track', '257 / 175', 'mm', 'TT-02 class, 190 mm bodies fit'],
-  ['Overall L × W × H', '337 × 211 × 95', 'mm', 'W over the axle collars; H to body posts'],
-  ['Mass (estimate)', (D.masses.reduce((s, m) => s + m.g, 0) / 1000).toFixed(2), 'kg', 'CG X −21, Z 29 mm, 58% rear'],
+  ['Wheelbase / track', '257 / 164', 'mm', '190 mm over the tires: 190 mm GT bodies fit'],
+  ['Overall L × W × H', `430 × 191 × ${D.body_h}`, 'mm', 'Body on; chassis alone 337 long'],
+  ['Mass (estimate)', (D.cg.mass_g / 1000).toFixed(2), 'kg', `CG X ${D.cg.x}, Z ${D.cg.z} mm, ${D.cg.rear_pct}% rear`],
   ['Top speed', '52.6', 'km/h', '14T / 87T, 6.21:1, 3600 Kv on 2S'],
   ['Steering', st.left.ackermann_pct + '%', 'Ackermann', st.left.servo_deg + '° servo for 28° lock'],
   ['Suspension travel', '+7 / −5', 'mm', 'Front sliding pillar; rear pod ±4°'],
   ['Printed parts', Math.round(totalPrinted), 'g', 'PLA chassis, PETG for load and heat'],
-  ['Parts to buy', '$258', 'USD', 'About $277 with tax'],
+  ['Parts to buy', '$265', 'USD', 'About $285 with tax'],
 ];
+document.getElementById('v-split').textContent = `${100 - D.cg.rear_pct} / ${D.cg.rear_pct}`;
+document.getElementById('v-tip').textContent = `${D.cg.tip_g} g`;
+document.getElementById('v-tip-note').textContent = `CG ${D.cg.z} mm high on a 164 mm track: it slides long before it rolls`;
 document.getElementById('specs').innerHTML = specs.map(([k, v, u, n]) =>
   `<div class="spec"><span>${k}</span><b>${v}<small>${u}</small></b><em>${n}</em></div>`).join('');
 
@@ -510,7 +522,7 @@ document.getElementById('fits-body').innerHTML = fits.map(r =>
 
 // ---------- checks
 const checks = [
-  ['No overlaps, assembled pose', 'Every printed and bought part pair < 0.01 mm³', '0 overlaps'],
+  ['No overlaps, assembled pose', 'Every printed and bought part pair < 0.01 mm³ (meshing gear teeth excepted)', '0 overlaps'],
   ['Steering sweep', 'Wheel + knuckle at ±28° clear the chassis', '3.3 mm'],
   ['Front travel', '+7 / −5 mm at straight and full lock', '1.5 mm'],
   ['Tie rods at lock', 'Real rod geometry vs chassis, servo, knuckle, wheels', '4.2 mm'],
@@ -519,13 +531,17 @@ const checks = [
   ['Transmission angle', '≥ 40° (no toggle)', st.left.min_transmission_deg + '°'],
   ['Both wheels steer the same way', 'Sign check over the whole sweep', 'yes'],
   ['Bump steer', '< 0.5° per 3 mm and < 1.6° at full travel', st.bump_steer_deg_per_3mm + '° / ' + st.bump_steer_deg_full + '°'],
-  ['Tie rod buckling', 'Euler P_cr ≥ 2 × servo stall push', 'SF 3.5'],
+  ['Tie rod buckling', 'Euler P_cr ≥ 2 × servo stall push', 'SF 5.2'],
+  ['Front wheel stack-up', 'Bearing, race shim, hub collar and rim hex put the wheel centre on track / 2 (±0.5)', '82.0 mm'],
+  ['Body clearance', 'Shell vs tires at ±28° lock, +7 bump and −5 droop, and vs every part', 'pass'],
+  ['Body posts', 'Post tops computed from the shell: skin + 9 mm', 'F 92.5, R 92.8'],
+  ['ESP32 board fit', 'Board, module and header pins vs cradle and lid', '0 overlap, 0.2 mm lid gap'],
   ['Rear pod swing', '±4° clears the pan (lugs excluded)', '1.1 mm'],
   ['Pivot float', '≥ 0.25 mm each side', '0.3 mm'],
   ['Ground clearance at pod swing', 'Pan rear edge > 1 mm off the ground at 4°', '1.3 mm'],
   ['Motor and spur height', 'Spur > 6 mm off the ground; motor clear of axle', '10.5 mm'],
-  ['Bed fit', 'Every part fits 220 × 220 × 250 in its print pose', 'all 24'],
-  ['Solid validity', 'Every part is a valid closed solid', 'all 24'],
+  ['Bed fit', 'Every part fits 220 × 220 × 250 in its print pose', 'all 25'],
+  ['Solid validity', 'Every part is a valid closed solid', 'all 25'],
 ];
 document.getElementById('checks-body').innerHTML = checks.map(r =>
   `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="n">${r[2]}</td><td><span class="pass">pass</span></td></tr>`).join('');
@@ -539,7 +555,7 @@ document.getElementById('parts-foot').innerHTML = `<tr><td colspan="5">Total pri
 
 // ---------- drawing tabs
 const tabs = document.getElementById('sheettabs'), sheetBox = document.getElementById('sheet');
-const names = { '01': 'General arrangement', '02': 'Front suspension + steering', '03': 'Rear pod + drivetrain', '04': 'Knuckle detail', '05': 'Spool, clamp, hub' };
+const names = { '01': 'General arrangement', '02': 'Front suspension + steering', '03': 'Rear pod + drivetrain', '04': 'Knuckle detail', '05': 'Spool, clamp, hub', '06': 'Body + envelope' };
 function showSheet(k) {
   sheetBox.innerHTML = SHEETS[k];
   [...tabs.children].forEach(b => b.setAttribute('aria-selected', String(b.dataset.k === k)));
@@ -630,12 +646,12 @@ function drawCharts() {
   lineChart('ch-bump', { title: 'Bump steer', sub: 'Left wheel steer angle against suspension travel (+ is bump). Positive is toe-out; it grows with the square of travel.',
     rows: D.bump, xk: 'dz', x: [-5, 7], y: [0, 1.6], xstep: 1, ystep: 0.4, xlab: 'travel (mm)', ylab: 'toe-out (°)', unit: '°', zero: true,
     series: [{ k: 'toe', name: 'toe-out', c: '--s1' }] });
-  barChart('ch-gear', { title: 'Top speed by pinion', sub: '87T 48P spur, 3600 Kv on 2S. Launch is traction-limited for every pinion, so 0 to 30 km/h stays at 1.33 s; taller gears only add top speed and motor heat. 14T is the default.',
+  barChart('ch-gear', { title: 'Top speed by pinion', sub: '87T 48P spur, 3600 Kv on 2S. Launch is traction-limited for every pinion, so 0 to 30 km/h stays at 1.38 s; taller gears only add top speed and motor heat. 14T is the default.',
     rows: D.gearing.map(g => ({ k: `${g.pinion}T · ${g.ratio}:1`, v: g.top_kmh, t: `${g.top_kmh} km/h`, hi: g.pinion === 14, tip: `${g.pinion}T, ${g.ratio}:1<br>${g.top_kmh} km/h top speed` })),
     max: 70, step: 10, lw: 120 });
   const totM = D.masses.reduce((s, m) => s + m.g, 0);
-  barChart('ch-mass', { title: 'Mass budget', sub: `Estimated ${(totM / 1000).toFixed(2)} kg ready to run. CG 21 mm behind centre and 29 mm up, giving 58% on the rear.`,
-    rows: D.masses.map(m => ({ k: m.item, v: m.g, t: `${m.g} g`, tip: `${m.item}: ${m.g} g (${(m.g / totM * 100).toFixed(0)}%)` })), max: 300, step: 50, lw: 160 });
+  barChart('ch-mass', { title: 'Mass budget', sub: `Estimated ${(totM / 1000).toFixed(2)} kg ready to run. CG ${Math.abs(D.cg.x)} mm ${D.cg.x < 0 ? 'behind' : 'ahead of'} centre and ${D.cg.z} mm up, giving ${D.cg.rear_pct}% on the rear.`,
+    rows: D.masses.map(m => ({ k: m.item, v: m.g, t: `${m.g} g`, tip: `${m.item}: ${m.g} g (${(m.g / totM * 100).toFixed(0)}%)` })), max: Math.ceil(Math.max(...D.masses.map(m => m.g)) / 50) * 50, step: 50, lw: 160 });
 }
 drawCharts();
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawCharts);
@@ -658,9 +674,22 @@ import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 const D = JSON.parse(document.getElementById('wkdata').textContent);
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const host = document.getElementById('viewer'), hint = document.getElementById('vhint'), pick = document.getElementById('pick');
-const GROUPS = { chassis: 'Chassis', front: 'Front suspension', steering: 'Steering', rear: 'Rear pod', bought: 'Bought parts' };
-const EXPLODE = { chassis: [0, 0, 0], front: [60, 0, 0], steering: [30, 0, 50], rear: [-70, 0, 0], bought: [0, 0, -45] };
-const REF = { wheels: 'Shaluoman 67 × 26 mm foam tires', battery: '2S 5200 mAh hard case (138 × 47 × 25)', motor: 'QR3650 brushless, 36 × 53 mm', spur: '87T 48P spur, drilled Ø12.2', pinion: '14T 48P pinion', servo: 'MG996R servo envelope', esc: 'ESC envelope (10BL60 is 35 × 31 × 31)', rear_axle: 'Ø5 × 211 mm stainless, 0.5 mm flat', kingpins: 'Ø3 × 47 mm stainless', collars: '5 mm shaft collars' };
+const GROUPS = { body: 'Body', chassis: 'Chassis', front: 'Front suspension', steering: 'Steering', rear: 'Rear pod',
+  electronics: 'Electronics', drivetrain: 'Drivetrain', wheels: 'Wheels' };
+const EXPLODE = { body: [0, 0, 140], chassis: [0, 0, 0], front: [60, 0, 0], steering: [30, 0, 50], rear: [-70, 0, 0],
+  electronics: [0, 0, 70], drivetrain: [-70, 0, 0], wheels: [0, 0, -45] };
+const REF = {
+  tires: ['Shaluoman 1/10 foam tires', '67 × 26 mm on 12 mm hex rims, ET3'], rims: ['6-spoke 1/10 rim', 'Hex pocket depth not published: measure'],
+  battery: ['Zeee 2S 5200 mAh 80C hard case', '138 × 47 × 25 mm, 256 g, XT60'], esc: ['Hobbywing QuicRun 10BL60 Sensored G2', '35 × 31 × 30.8 mm with fan, 66.5 g, 6 V / 4 A BEC'],
+  esp32: ['Espressif ESP32-DevKitC V4', 'PCB 48.26 × 27.94, module overhangs 6.04; held in the printed cradle'], esp32_pins: ['DevKitC header pins', '2 × 19 at 2.54, leads soldered'],
+  servo: ['MG996R metal-gear servo', '40.7 × 19.7 × 42.9 mm, 55 g, 1.08 N·m at 6 V'], servo_horn: ['Single-arm horn', 'Hole at 14 mm drilled to 3.0 for both tie rods'],
+  leads: ['14 AWG silicone leads + XT60', 'Indicative routes; motor leads loop over the pod pivot'],
+  motor: ['Hobbywing QuicRun 3650 SD G2 10.5T', '3600 Kv, 36 × 52.8 mm, 186 g, 3.17 shaft'], spur: ['Kimbrough #148 87T 48P spur', 'Centre drilled Ø12.2, clamped to the spool'],
+  pinion: ['14T 48P pinion', '3.17 bore, set screw on the shaft flat'], rear_axle: ['Ø5 × 200 mm 304 stainless', '0.5 mm flat ground along the spool'],
+  kingpins: ['Ø3 × 47 mm 304 stainless', 'Pressed into the arms; knuckles slide on them'], collars: ['5 mm shaft collars', 'Axle retention'],
+  body: ['PROTOform Venturi GT 190 mm', 'Clear polycarbonate, 85 to 90 g painted. Shape heights are a stand-in until the shell is in hand'],
+  windows: ['Venturi GT windows', 'Masked before painting'], wing: ['Venturi GT wing', 'Included with the body'] };
+const colorOf = m => m.userData.color || css('--g-' + m.userData.group);
 
 let renderer;
 try { renderer = new THREE.WebGLRenderer({ antialias: true }); }
@@ -678,11 +707,11 @@ const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(300, -40
 const fill = new THREE.DirectionalLight(0xffffff, 0.6); fill.position.set(-400, 300, 200); scene.add(fill);
 const plane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 128);
 const meshes = [];
-const visible = { chassis: true, front: true, steering: true, rear: true, bought: true };
+const visible = Object.fromEntries(Object.keys(GROUPS).map(g => [g, true]));
 
 function theme() {
   scene.background = new THREE.Color(css('--sheet'));
-  meshes.forEach(m => { if (!m.userData.sel) m.material.color.set(css('--g-' + m.userData.group)); });
+  meshes.forEach(m => { if (!m.userData.sel) m.material.color.set(colorOf(m)); });
   render();
 }
 function size() { const r = host.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); render(); }
@@ -691,7 +720,7 @@ function render() { if (queued) return; queued = true; requestAnimationFrame(() 
 controls.addEventListener('change', render);
 new ResizeObserver(size).observe(host);
 
-const views = { iso: [380, -420, 300], top: [0, -1, 700], side: [0, -700, 40], front: [700, 0, 60] };
+const views = { iso: [470, -520, 360], top: [0, -1, 860], side: [0, -860, 50], front: [860, 0, 70] };
 function setView(v) {
   const p = views[v]; camera.position.set(p[0], p[1], p[2]); controls.target.set(-10, 0, 30); controls.update(); render();
   document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
@@ -720,7 +749,7 @@ const cutpos = document.getElementById('cutpos'), cutval = document.getElementBy
 function applyCut() {
   const v = +cutpos.value;
   if (cut === 'x') { plane.normal.set(-1, 0, 0); plane.constant = v; cutval.textContent = `X = ${v} mm (front axle 128.5, rear −128.5)`; }
-  if (cut === 'y') { plane.normal.set(0, -1, 0); plane.constant = v; cutval.textContent = `Y = ${v} mm (kingpins ±56, pod plates ±45)`; }
+  if (cut === 'y') { plane.normal.set(0, -1, 0); plane.constant = v; cutval.textContent = `Y = ${v} mm (kingpins ±50.5, pod plates ±45, ESP32 −30)`; }
   if (cut === 'none') cutval.textContent = '';
   meshes.forEach(m => m.material.clippingPlanes = cut === 'none' ? [] : [plane]);
   render();
@@ -728,7 +757,7 @@ function applyCut() {
 document.querySelectorAll('[data-cut]').forEach(b => b.onclick = () => {
   cut = b.dataset.cut;
   document.querySelectorAll('[data-cut]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-  if (cut === 'y') { cutpos.min = -110; cutpos.max = 110; cutpos.value = 56; }
+  if (cut === 'y') { cutpos.min = -110; cutpos.max = 110; cutpos.value = 50; }
   if (cut === 'x') { cutpos.min = -180; cutpos.max = 160; cutpos.value = 128; }
   applyCut();
 });
@@ -744,13 +773,14 @@ renderer.domElement.addEventListener('pointerup', e => {
   ndc.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
   ray.setFromCamera(ndc, camera);
   const hits = ray.intersectObjects(meshes.filter(m => m.visible)).filter(h => cut === 'none' || plane.distanceToPoint(h.point) >= 0);
-  if (selected) { selected.userData.sel = false; selected.material.color.set(css('--g-' + selected.userData.group)); selected.material.emissive.set(0x000000); }
+  if (selected) { selected.userData.sel = false; selected.material.color.set(colorOf(selected)); selected.material.emissive.set(0x000000); }
   selected = hits.length ? hits[0].object : null;
   if (!selected) { pick.hidden = true; render(); return; }
   selected.userData.sel = true; selected.material.emissive.set(css('--redline')); selected.material.emissiveIntensity = 0.35;
   const n = selected.userData.name;
   if (n.startsWith('ref_')) {
-    pick.innerHTML = `<h4>${n.slice(4).replace(/_/g, ' ')}</h4><dl><dt>Type</dt><dd>Bought part (envelope)</dd><dt>What</dt><dd>${REF[n.slice(4)] || ''}</dd></dl>`;
+    const [what, note] = REF[n.slice(4)] || ['', ''];
+    pick.innerHTML = `<h4>${what || n.slice(4)}</h4><dl><dt>Type</dt><dd>Bought, modelled from maker dimensions</dd><dt>Spec</dt><dd>${note}</dd></dl>`;
   } else {
     const p = D.parts.find(x => x.name === n) || {};
     pick.innerHTML = `<h4>${n.replace(/_/g, ' ')}</h4><dl><dt>Group</dt><dd>${GROUPS[selected.userData.group]}</dd><dt>Material</dt><dd>${p.material || ''}</dd><dt>Print</dt><dd>${(p.note || '').replace(/^(PETG|PLA)( or PLA)?,?\s*/, '')}</dd><dt>Size</dt><dd>${(p.bbox || []).join(' × ')} mm</dd><dt>Mass</dt><dd>${p.mass_g ?? ''} g (est.)</dd></dl>`;
@@ -763,13 +793,16 @@ const loader = new STLLoader();
 const entries = Object.entries(D.models);
 let done = 0, B64 = {};
 try { B64 = await (await fetch('models.json')).json(); } catch (e) { console.warn('models.json failed', e); }
-await Promise.all(entries.map(async ([name, group]) => {
+await Promise.all(entries.map(async ([name, info]) => {
+  const group = info.g, op = info.o ?? 1;
   try {
     const buf = Uint8Array.from(atob(B64[name]), c => c.charCodeAt(0)).buffer;
     const geo = loader.parse(buf); geo.computeVertexNormals();
-    const mat = new THREE.MeshStandardMaterial({ color: css('--g-' + group), roughness: group === 'bought' ? 0.85 : 0.55, metalness: 0.05, side: THREE.DoubleSide,
-      transparent: name === 'ref_wheels' || name === 'ref_battery', opacity: name === 'ref_wheels' ? 0.55 : name === 'ref_battery' ? 0.7 : 1 });
-    const m = new THREE.Mesh(geo, mat); m.userData = { name, group }; scene.add(m); meshes.push(m);
+    const metal = ['ref_rims', 'ref_rear_axle', 'ref_kingpins', 'ref_collars', 'ref_pinion', 'ref_esp32_pins'].includes(name);
+    const mat = new THREE.MeshStandardMaterial({ color: info.c || css('--g-' + group), roughness: metal ? 0.35 : 0.6,
+      metalness: metal ? 0.6 : 0.05, side: THREE.DoubleSide, transparent: op < 1, opacity: op, depthWrite: op >= 1 });
+    const m = new THREE.Mesh(geo, mat); m.userData = { name, group, color: info.c || null }; m.renderOrder = op < 1 ? 1 : 0;
+    scene.add(m); meshes.push(m);
   } catch (e) { console.warn('model failed', name, e); }
   hint.textContent = `Loading ${++done} / ${entries.length} meshes…`;
 }));

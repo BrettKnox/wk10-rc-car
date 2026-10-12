@@ -169,7 +169,8 @@ def build():
     ps, r = w.parts(), w.refs()
     solid = {k: v[0] for k, v in ps.items()}
     asm_parts = [s for k, s in solid.items() if "_x" not in k]
-    refs_main = [r[k] for k in ("wheels", "battery", "motor", "spur", "pinion", "servo", "esc", "rear_axle", "kingpins", "collars")]
+    refs_main = [r[k] for k in ("tires", "rims", "battery", "motor", "spur", "pinion", "servo", "servo_horn", "esc",
+                                "esp32", "rear_axle", "kingpins", "collars")]
     whole = Compound(asm_parts + refs_main)
     sheets = []
 
@@ -197,8 +198,8 @@ def build():
     # end
     S.ground("end", -bb.max.Y - 10, bb.max.Y + 10)
     S.dim("end", (0, -w.TRACK / 2, 0), (0, w.TRACK / 2, 0), "h", -18, f"{w.TRACK:.0f}")
-    S.note(60, 690, [f"MASS (EST.) 1.24 kg  ·  CG X -21 / Z 29  ·  58% REAR",
-                     "BOUGHT PARTS SHOWN: TIRES, MOTOR, SPUR/PINION, SERVO, ESC, 2S PACK, AXLE, KINGPINS, COLLARS"])
+    S.note(60, 690, ["BODY REMOVED (SHEET 06). BOUGHT PARTS MODELLED FROM MAKER DIMENSIONS: TIRES + RIMS, QR3650,",
+                     "10BL60 G2 ESC, MG996R, ESP32-DEVKITC V4, 2S PACK, 87T/14T 48P, AXLE, KINGPINS, COLLARS"])
     sheets.append(S)
 
     # ------------------------------------------------------------ 02 front suspension + steering
@@ -296,12 +297,41 @@ def build():
     S.dim("top", (w.RA_X + 18, w.SPUR_FACE, 0), (w.RA_X + 18, w.SPUR_FACE + w.SPUR_W, 0), "v", 70, f"{w.SPUR_W:.0f} SPUR")
     hub = w.hex_hub()
     S.view("hub", "side", hub, 9.0, 600, 330, -9, -1, hidden=True, label="HEX HUB (×4), ELEVATION")
-    S.dim("hub", (-8, 0, 0), (-8, 0, 12), "v", -20, "12")
+    S.dim("hub", (-8, 0, 0), (-8, 0, w.HUB_COLLAR + 5), "v", -20, f"{w.HUB_COLLAR + 5:.1f}")
     S.dim("hub", (-6, 0, 12), (6, 0, 12), "h", 18, "12 A/F")
     S.callout("hub", (0, 0, 3.5), "M3 SET BOLT + CAPTIVE NUT", 70, 30)
     S.note(600, 470, ["SPOOL, CLAMP, HUB: PETG 100%", "SPUR: DRILL CENTRE Ø12.2, 3× Ø3.2 USING THE CLAMP",
                       "AS A TEMPLATE; M3×12 + NUTS", "AXLE: 5 mm 304 SS, 0.5 mm FLAT ALONG THE SPOOL",
                       "RACE SHIM Ø6.5/Ø5.5 × 1 BETWEEN COLLAR AND BEARING"])
+    sheets.append(S)
+
+    # ------------------------------------------------------------ 06 body + envelope
+    S = Sheet("06", "BODY, POSTS + ENVELOPE", 1000, 760)
+    shell, windows, wing = r["body"], r["windows"], r["wing"]
+    env = Compound([shell, windows, wing, r["tires"], solid["front_end"], solid["pod_brace"]])
+    bb = env.bounding_box()
+    s = 1.15
+    S.view("side", "side", env, s, 60, 90 + s * bb.max.Z, bb.min.X, 0, label="RIGHT ELEVATION, BODY ON")
+    S.view("end", "end", env, s, 680, 90 + s * bb.max.Z, -bb.max.Y, 0, label="FRONT VIEW")
+    S.view("top", "top", Compound([shell, windows, wing, r["tires"]]), s, 60, 330, bb.min.X, bb.max.Y, label="TOP VIEW")
+    S.ground("side", bb.min.X - 10, bb.max.X + 10)
+    S.dim("side", (bb.min.X, 0, bb.max.Z), (bb.max.X, 0, bb.max.Z), "h", -16, f"{bb.max.X - bb.min.X:.0f} OVERALL")
+    S.dim("side", (bb.max.X, 0, 0), (bb.max.X, 0, bb.max.Z), "v", 24, f"{bb.max.Z:.0f}")
+    S.dim("side", (w.RA_X, 0, 0), (w.FA_X, 0, 0), "h", 22, f"{w.WB:.0f} WB")
+    S.ground("end", -bb.max.Y - 10, bb.max.Y + 10)
+    S.dim("end", (0, -w.bought.BODY["W"] / 2, 0), (0, w.bought.BODY["W"] / 2, 0), "h", -18, f"{w.bought.BODY['W']:.0f} BODY")
+    pf = w.body_post_top(w.BODY_POST_X_F, w.BODY_POST_Y_F)
+    pr = w.body_post_top(w.POD_BRACE_X + 5, w.BODY_POST_Y_R)
+    S.note(620, 380, ["BODY: PROTOFORM VENTURI GT, 190 mm PC",
+                      "430 x 191, 258 WB, 85-90 g PAINTED",
+                      "HOOD/DECK HEIGHTS: STAND-IN, NOT PUBLISHED.",
+                      "OFFER THE SHELL UP BEFORE TRIMMING.",
+                      f"FRONT POST TOPS Z {pf:.1f}, REAR Z {pr:.1f}",
+                      "(SKIN + 9). R-CLIP HOLE AT SKIN + 4.",
+                      "POST HOLES 7 mm. REAR HOLES ARE FORE-AFT",
+                      "SLOTS: THE REAR POSTS RIDE THE POD.",
+                      "ARCHES: TIRE + 9, STRETCHED 12 FORE/AFT,",
+                      "OPEN TO THE SKIRT. CLEAR LOCK + BUMP."])
     sheets.append(S)
     return ps, r, solid, sheets
 
@@ -346,19 +376,50 @@ def data(ps, r, solid):
     gearing = [{"pinion": 13, "ratio": 6.69, "top_kmh": 49.0}, {"pinion": 14, "ratio": 6.21, "top_kmh": 52.6},
                {"pinion": 15, "ratio": 5.80, "top_kmh": 56.0}, {"pinion": 16, "ratio": 5.44, "top_kmh": 59.2},
                {"pinion": 17, "ratio": 5.12, "top_kmh": 62.6}]
-    masses = [("2S LiPo", 250), ("Wheels, hubs, axles", 225), ("Printed parts", 215), ("Motor", 180), ("Lexan body", 120),
-              ("ESC", 80), ("Servo", 55), ("ESP32 + wiring", 40), ("Hardware", 40)]
+    # bought masses from the makers' pages (bought.py); printed from the CAD volumes above
+    printed = round(sum(p["mass_g"] * p["qty"] for p in parts))
+    masses = [("2S LiPo", 256), ("Wheels, hubs, axles", 225), ("Printed parts", printed), ("Motor", 186), ("Body + wing", 90),
+              ("ESC", 67), ("Servo", 55), ("ESP32 + leads", 45), ("Hardware", 40)]
+    # CG: every mass at its own centroid (printed parts from CAD, bought parts at their modelled shape)
+    from build123d import CenterOf
+    pts = []
+    for p in parts:
+        if "_x" in p["name"]:
+            pts.append((p["mass_g"] * p["qty"], (0, 0, w.AXLE_Z)))           # hubs, shims: at the axles, near enough
+        else:
+            c = solid[p["name"]].center(CenterOf.MASS)
+            pts.append((p["mass_g"], (c.X, c.Y, c.Z)))
+    bought_at = {"2S LiPo": "battery", "Wheels, hubs, axles": "tires", "Motor": "motor", "Body + wing": "body",
+                 "ESC": "esc", "Servo": "servo", "ESP32 + leads": "esp32", "Hardware": "battery"}
+    for item, g in masses:
+        if item in bought_at:
+            c = r[bought_at[item]].center(CenterOf.BOUNDING_BOX)
+            pts.append((g, (c.X, c.Y, c.Z)))
+    m = sum(g for g, _ in pts)
+    cg = [sum(g * q[i] for g, q in pts) / m for i in range(3)]
+    rear = (w.FA_X - cg[0]) / w.WB
     return {"steering": st, "sweep": sweep, "bump": bump, "parts": parts, "gearing": gearing,
-            "masses": [{"item": a, "g": b} for a, b in masses]}
+            "masses": [{"item": a, "g": b} for a, b in masses],
+            "cg": {"mass_g": round(m), "x": round(cg[0], 1), "y": round(cg[1], 1), "z": round(cg[2], 1),
+                   "rear_pct": round(rear * 100), "tip_g": round(w.TRACK / 2 / cg[2], 2)}}
 
 
 GROUPS = {  # viewer colour groups
-    "chassis": ["pan_rear", "pan_front", "splice_servo_block", "esp32_tray"],
+    "chassis": ["pan_rear", "pan_front", "splice_servo_block", "esp32_cradle", "esp32_lid"],
     "front": ["front_end", "upper_arm_L", "upper_arm_R", "knuckle_L", "knuckle_R", "bump_stops"],
     "steering": ["tie_rod_L_horn", "tie_rod_L_knuckle", "tie_rod_R_horn", "tie_rod_R_knuckle"],
     "rear": ["pod_floor", "pod_plate_L", "pod_plate_R_motor", "pod_brace", "spool", "spur_clamp"],
 }
-REF_MODELS = ["wheels", "battery", "motor", "spur", "pinion", "servo", "esc", "rear_axle", "kingpins", "collars"]
+REF_MODELS = {  # bought parts: viewer group, colour, opacity
+    "tires": ("wheels", "#2b2d30", 1), "rims": ("wheels", "#c9ced3", 1),
+    "battery": ("electronics", "#1d1f22", 1), "esc": ("electronics", "#2a2d31", 1),
+    "esp32": ("electronics", "#14181c", 1), "esp32_pins": ("electronics", "#c8a24a", 1),
+    "servo": ("electronics", "#1f2124", 1), "servo_horn": ("electronics", "#e4e4e4", 1),
+    "leads": ("electronics", "#b8432f", 1),
+    "motor": ("drivetrain", "#4a5058", 1), "spur": ("drivetrain", "#ebe7dc", 1), "pinion": ("drivetrain", "#b8bcc2", 1),
+    "rear_axle": ("drivetrain", "#9aa3ab", 1), "collars": ("drivetrain", "#9aa3ab", 1), "kingpins": ("front", "#9aa3ab", 1),
+    "body": ("body", "#dfe6ec", 0.32), "windows": ("body", "#1c2329", 0.5), "wing": ("body", "#dfe6ec", 0.45),
+}
 
 
 if __name__ == "__main__":
@@ -371,11 +432,13 @@ if __name__ == "__main__":
     for g, keys in GROUPS.items():
         for k in keys:
             export_stl(solid[k], str(ROOT / "models" / f"{k}.stl"), tolerance=0.04, angular_tolerance=0.25)
-            manifest[k] = g
-    for k in REF_MODELS:
+            manifest[k] = {"g": g}
+    r["leads"] = w.leads()
+    for k, (g, c, o) in REF_MODELS.items():
         export_stl(r[k], str(ROOT / "models" / f"ref_{k}.stl"), tolerance=0.05, angular_tolerance=0.3)
-        manifest["ref_" + k] = "bought"
+        manifest["ref_" + k] = {"g": g, "c": c, "o": o}
     d = data(ps, r, solid)
     d["models"] = manifest
+    d["body_h"] = round(Compound([r["body"], r["wing"]]).bounding_box().max.Z)
     (ROOT / "data.json").write_text(json.dumps(d, indent=1), encoding="utf-8")
     print("sheets", [S.num for S in sheets], "models", len(manifest))

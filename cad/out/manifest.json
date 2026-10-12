@@ -10,7 +10,7 @@
  },
  "pan_front": {
   "print": "PLA, flat, 5 walls, 40% gyroid",
-  "volume_cm3": 25.2,
+  "volume_cm3": 21.4,
   "bbox_mm": [
    66.0,
    104.0,
@@ -19,7 +19,7 @@
  },
  "splice_servo_block": {
   "print": "PLA, flat",
-  "volume_cm3": 14.6,
+  "volume_cm3": 15.2,
   "bbox_mm": [
    24.0,
    98.0,
@@ -28,36 +28,36 @@
  },
  "front_end": {
   "print": "PETG or PLA, base down, 6 walls",
-  "volume_cm3": 80.8,
+  "volume_cm3": 79.6,
   "bbox_mm": [
    54.0,
-   126.0,
-   81.0
+   115.0,
+   83.5
   ]
  },
  "upper_arm_L": {
   "print": "PLA, flat",
-  "volume_cm3": 3.5,
+  "volume_cm3": 3.1,
   "bbox_mm": [
    18.0,
-   46.0,
+   40.5,
    5.0
   ]
  },
  "upper_arm_R": {
   "print": "PLA, flat",
-  "volume_cm3": 3.5,
+  "volume_cm3": 3.1,
   "bbox_mm": [
    18.0,
-   46.0,
+   40.5,
    5.0
   ]
  },
  "knuckle_L": {
   "print": "PETG, axle bore vertical, 100% infill",
-  "volume_cm3": 3.8,
+  "volume_cm3": 3.9,
   "bbox_mm": [
-   26.0,
+   28.0,
    22.0,
    34.0
   ]
@@ -66,7 +66,7 @@
   "print": "PETG, axle bore vertical, 100% infill",
   "volume_cm3": 4.0,
   "bbox_mm": [
-   26.0,
+   28.0,
    22.0,
    37.2
   ]
@@ -100,11 +100,11 @@
  },
  "pod_brace": {
   "print": "PLA, flat",
-  "volume_cm3": 9.0,
+  "volume_cm3": 8.9,
   "bbox_mm": [
    10.0,
    90.0,
-   51.0
+   48.8
   ]
  },
  "spool": {
@@ -125,58 +125,67 @@
    30.0
   ]
  },
- "esp32_tray": {
-  "print": "PLA, flat",
-  "volume_cm3": 4.6,
+ "esp32_cradle": {
+  "print": "PLA, base down",
+  "volume_cm3": 9.6,
   "bbox_mm": [
-   54.0,
-   32.0,
-   12.0
+   69.9,
+   31.7,
+   16.8
+  ]
+ },
+ "esp32_lid": {
+  "print": "PLA, top face down",
+  "volume_cm3": 3.1,
+  "bbox_mm": [
+   69.9,
+   31.7,
+   2.0
   ]
  },
  "tie_rod_L_horn": {
   "print": "PETG, flat, 100% infill",
-  "volume_cm3": 1.0,
+  "volume_cm3": 0.9,
   "bbox_mm": [
-   15.4,
-   33.9,
+   13.5,
+   30.5,
    7.6
   ]
  },
  "tie_rod_L_knuckle": {
   "print": "PETG, flat, 100% infill",
-  "volume_cm3": 1.0,
+  "volume_cm3": 0.9,
   "bbox_mm": [
-   15.4,
-   33.9,
+   13.5,
+   30.5,
    7.6
   ]
  },
  "tie_rod_R_horn": {
   "print": "PETG, flat, 100% infill",
-  "volume_cm3": 1.0,
+  "volume_cm3": 0.9,
   "bbox_mm": [
-   15.4,
-   33.9,
+   13.5,
+   30.5,
    7.6
   ]
  },
  "tie_rod_R_knuckle": {
   "print": "PETG, flat, 100% infill",
-  "volume_cm3": 1.0,
+  "volume_cm3": 0.9,
   "bbox_mm": [
-   15.4,
-   33.9,
+   13.5,
+   30.5,
    7.6
   ]
  },
  "hex_hub_x4": {
   "print": "PETG, collar down, 100% infill, print 4",
-  "volume_cm3": 1.6,
+  "volume_cm3": 1.9,
   "bbox_mm": [
    16.0,
    16.0,
-   12.0
+   13.5
   ]
  },
  "race_shims_x4": {
@@ -202,7 +211,7 @@
   "volume_cm3": 0.1,
   "bbox_mm": [
    5.0,
-   117.0,
+   106.0,
    7.0
   ]
  }

@@ -1,24 +1,24 @@
 {
  "steering": {
   "right": {
-   "servo_deg": 35.1,
+   "servo_deg": 33.0,
    "inner_deg": 28.0,
-   "outer_deg": 23.5,
-   "ideal_outer_deg": 23.4,
-   "ackermann_pct": 96,
-   "min_transmission_deg": 65
+   "outer_deg": 23.9,
+   "ideal_outer_deg": 23.8,
+   "ackermann_pct": 98,
+   "min_transmission_deg": 64
   },
   "left": {
-   "servo_deg": 35.1,
+   "servo_deg": 33.0,
    "inner_deg": 28.0,
-   "outer_deg": 23.5,
-   "ideal_outer_deg": 23.4,
-   "ackermann_pct": 96,
-   "min_transmission_deg": 65
+   "outer_deg": 23.9,
+   "ideal_outer_deg": 23.8,
+   "ackermann_pct": 98,
+   "min_transmission_deg": 64
   },
   "bump_steer_deg_per_3mm": 0.27,
-  "bump_steer_deg_full": 1.47,
-  "rod_mm": 63.8
+  "bump_steer_deg_full": 1.49,
+  "rod_mm": 56.7
  },
  "sweep": [
   {
@@ -29,129 +29,129 @@
   },
   {
    "servo": 2,
-   "inner": 1.55,
-   "outer": 1.54,
-   "ideal": 1.54
+   "inner": 1.64,
+   "outer": 1.63,
+   "ideal": 1.63
   },
   {
    "servo": 4,
-   "inner": 3.12,
-   "outer": 3.07,
-   "ideal": 3.04
+   "inner": 3.3,
+   "outer": 3.25,
+   "ideal": 3.22
   },
   {
    "servo": 6,
-   "inner": 4.69,
-   "outer": 4.59,
-   "ideal": 4.53
+   "inner": 4.96,
+   "outer": 4.86,
+   "ideal": 4.8
   },
   {
    "servo": 8,
-   "inner": 6.27,
-   "outer": 6.09,
-   "ideal": 5.98
+   "inner": 6.63,
+   "outer": 6.45,
+   "ideal": 6.34
   },
   {
    "servo": 10,
-   "inner": 7.85,
-   "outer": 7.57,
-   "ideal": 7.41
+   "inner": 8.3,
+   "outer": 8.02,
+   "ideal": 7.86
   },
   {
    "servo": 12,
-   "inner": 9.44,
-   "outer": 9.03,
-   "ideal": 8.81
+   "inner": 9.99,
+   "outer": 9.57,
+   "ideal": 9.35
   },
   {
    "servo": 14,
-   "inner": 11.03,
-   "outer": 10.47,
-   "ideal": 10.19
+   "inner": 11.67,
+   "outer": 11.1,
+   "ideal": 10.82
   },
   {
    "servo": 16,
-   "inner": 12.63,
-   "outer": 11.88,
-   "ideal": 11.54
+   "inner": 13.37,
+   "outer": 12.6,
+   "ideal": 12.26
   },
   {
    "servo": 18,
-   "inner": 14.23,
-   "outer": 13.26,
-   "ideal": 12.86
+   "inner": 15.06,
+   "outer": 14.07,
+   "ideal": 13.68
   },
   {
    "servo": 20,
-   "inner": 15.83,
-   "outer": 14.62,
-   "ideal": 14.16
+   "inner": 16.77,
+   "outer": 15.51,
+   "ideal": 15.08
   },
   {
    "servo": 22,
-   "inner": 17.44,
-   "outer": 15.94,
-   "ideal": 15.44
+   "inner": 18.48,
+   "outer": 16.92,
+   "ideal": 16.46
   },
   {
    "servo": 24,
-   "inner": 19.04,
-   "outer": 17.22,
-   "ideal": 16.7
+   "inner": 20.19,
+   "outer": 18.29,
+   "ideal": 17.82
   },
   {
    "servo": 26,
-   "inner": 20.65,
-   "outer": 18.46,
-   "ideal": 17.94
-  },
-  {
-   "servo": 28,
-   "inner": 22.27,
-   "outer": 19.66,
+   "inner": 21.92,
+   "outer": 19.61,
    "ideal": 19.16
   },
   {
+   "servo": 28,
+   "inner": 23.65,
+   "outer": 20.89,
+   "ideal": 20.49
+  },
+  {
    "servo": 30,
-   "inner": 23.88,
-   "outer": 20.82,
-   "ideal": 20.36
+   "inner": 25.4,
+   "outer": 22.12,
+   "ideal": 21.81
   },
   {
    "servo": 32,
-   "inner": 25.5,
-   "outer": 21.93,
-   "ideal": 21.55
+   "inner": 27.15,
+   "outer": 23.3,
+   "ideal": 23.12
   },
   {
    "servo": 34,
-   "inner": 27.12,
-   "outer": 22.98,
-   "ideal": 22.72
+   "inner": 28.92,
+   "outer": 24.42,
+   "ideal": 24.42
   },
   {
    "servo": 36,
-   "inner": 28.75,
-   "outer": 23.99,
-   "ideal": 23.88
+   "inner": 30.71,
+   "outer": 25.49,
+   "ideal": 25.72
   }
  ],
  "bump": [
   {
    "dz": -5,
-   "toe": 0.751
+   "toe": 0.759
   },
   {
    "dz": -4,
-   "toe": 0.48
+   "toe": 0.486
   },
   {
    "dz": -3,
-   "toe": 0.27
+   "toe": 0.273
   },
   {
    "dz": -2,
-   "toe": 0.12
+   "toe": 0.121
   },
   {
    "dz": -1,
@@ -167,27 +167,27 @@
   },
   {
    "dz": 2,
-   "toe": 0.12
+   "toe": 0.121
   },
   {
    "dz": 3,
-   "toe": 0.27
+   "toe": 0.273
   },
   {
    "dz": 4,
-   "toe": 0.48
+   "toe": 0.486
   },
   {
    "dz": 5,
-   "toe": 0.751
+   "toe": 0.759
   },
   {
    "dz": 6,
-   "toe": 1.081
+   "toe": 1.094
   },
   {
    "dz": 7,
-   "toe": 1.473
+   "toe": 1.49
   }
  ],
  "parts": [
@@ -209,8 +209,8 @@
    "note": "PLA, flat, 5 walls, 40% gyroid",
    "material": "PLA",
    "qty": 1,
-   "volume_cm3": 25.21,
-   "mass_g": 18.8,
+   "volume_cm3": 21.44,
+   "mass_g": 16.0,
    "bbox": [
     66.0,
     104.0,
@@ -222,8 +222,8 @@
    "note": "PLA, flat",
    "material": "PLA",
    "qty": 1,
-   "volume_cm3": 14.57,
-   "mass_g": 10.8,
+   "volume_cm3": 15.16,
+   "mass_g": 11.3,
    "bbox": [
     24.0,
     98.0,
@@ -235,12 +235,12 @@
    "note": "PETG or PLA, base down, 6 walls",
    "material": "PETG",
    "qty": 1,
-   "volume_cm3": 80.82,
-   "mass_g": 61.6,
+   "volume_cm3": 79.61,
+   "mass_g": 60.7,
    "bbox": [
     54.0,
-    126.0,
-    81.0
+    115.0,
+    83.5
    ]
   },
   {
@@ -248,11 +248,11 @@
    "note": "PLA, flat",
    "material": "PLA",
    "qty": 1,
-   "volume_cm3": 3.45,
-   "mass_g": 2.6,
+   "volume_cm3": 3.09,
+   "mass_g": 2.3,
    "bbox": [
     18.0,
-    46.0,
+    40.5,
     5.0
    ]
   },
@@ -261,11 +261,11 @@
    "note": "PLA, flat",
    "material": "PLA",
    "qty": 1,
-   "volume_cm3": 3.45,
-   "mass_g": 2.6,
+   "volume_cm3": 3.09,
+   "mass_g": 2.3,
    "bbox": [
     18.0,
-    46.0,
+    40.5,
     5.0
    ]
   },
@@ -274,10 +274,10 @@
    "note": "PETG, axle bore vertical, 100% infill",
    "material": "PETG",
    "qty": 1,
-   "volume_cm3": 3.82,
+   "volume_cm3": 3.87,
    "mass_g": 4.9,
    "bbox": [
-    26.0,
+    28.0,
     22.0,
     34.0
    ]
@@ -287,10 +287,10 @@
    "note": "PETG, axle bore vertical, 100% infill",
    "material": "PETG",
    "qty": 1,
-   "volume_cm3": 3.98,
+   "volume_cm3": 4.03,
    "mass_g": 5.1,
    "bbox": [
-    26.0,
+    28.0,
     22.0,
     37.2
    ]
@@ -339,12 +339,12 @@
    "note": "PLA, flat",
    "material": "PLA",
    "qty": 1,
-   "volume_cm3": 9.0,
-   "mass_g": 6.7,
+   "volume_cm3": 8.9,
+   "mass_g": 6.6,
    "bbox": [
     10.0,
     90.0,
-    51.0
+    48.8
    ]
   },
   {
@@ -374,16 +374,29 @@
    ]
   },
   {
-   "name": "esp32_tray",
-   "note": "PLA, flat",
+   "name": "esp32_cradle",
+   "note": "PLA, base down",
    "material": "PLA",
    "qty": 1,
-   "volume_cm3": 4.63,
-   "mass_g": 3.4,
+   "volume_cm3": 9.56,
+   "mass_g": 7.1,
    "bbox": [
-    54.0,
-    32.0,
-    12.0
+    69.9,
+    31.7,
+    16.8
+   ]
+  },
+  {
+   "name": "esp32_lid",
+   "note": "PLA, top face down",
+   "material": "PLA",
+   "qty": 1,
+   "volume_cm3": 3.14,
+   "mass_g": 2.3,
+   "bbox": [
+    69.9,
+    31.7,
+    2.0
    ]
   },
   {
@@ -391,11 +404,11 @@
    "note": "PETG, flat, 100% infill",
    "material": "PETG",
    "qty": 1,
-   "volume_cm3": 0.99,
-   "mass_g": 1.3,
+   "volume_cm3": 0.88,
+   "mass_g": 1.1,
    "bbox": [
-    15.4,
-    33.9,
+    13.5,
+    30.5,
     7.6
    ]
   },
@@ -404,11 +417,11 @@
    "note": "PETG, flat, 100% infill",
    "material": "PETG",
    "qty": 1,
-   "volume_cm3": 0.99,
-   "mass_g": 1.3,
+   "volume_cm3": 0.88,
+   "mass_g": 1.1,
    "bbox": [
-    15.4,
-    33.9,
+    13.5,
+    30.5,
     7.6
    ]
   },
@@ -417,11 +430,11 @@
    "note": "PETG, flat, 100% infill",
    "material": "PETG",
    "qty": 1,
-   "volume_cm3": 0.99,
-   "mass_g": 1.3,
+   "volume_cm3": 0.88,
+   "mass_g": 1.1,
    "bbox": [
-    15.4,
-    33.9,
+    13.5,
+    30.5,
     7.6
    ]
   },
@@ -430,11 +443,11 @@
    "note": "PETG, flat, 100% infill",
    "material": "PETG",
    "qty": 1,
-   "volume_cm3": 0.99,
-   "mass_g": 1.3,
+   "volume_cm3": 0.88,
+   "mass_g": 1.1,
    "bbox": [
-    15.4,
-    33.9,
+    13.5,
+    30.5,
     7.6
    ]
   },
@@ -443,12 +456,12 @@
    "note": "PETG, collar down, 100% infill, print 4",
    "material": "PETG",
    "qty": 4,
-   "volume_cm3": 1.62,
-   "mass_g": 2.1,
+   "volume_cm3": 1.89,
+   "mass_g": 2.4,
    "bbox": [
     16.0,
     16.0,
-    12.0
+    13.5
    ]
   },
   {
@@ -486,7 +499,7 @@
    "mass_g": 0.1,
    "bbox": [
     5.0,
-    117.0,
+    106.0,
     7.0
    ]
   }
@@ -521,7 +534,7 @@
  "masses": [
   {
    "item": "2S LiPo",
-   "g": 250
+   "g": 256
   },
   {
    "item": "Wheels, hubs, axles",
@@ -529,63 +542,195 @@
   },
   {
    "item": "Printed parts",
-   "g": 215
+   "g": 263
   },
   {
    "item": "Motor",
-   "g": 180
+   "g": 186
   },
   {
-   "item": "Lexan body",
-   "g": 120
+   "item": "Body + wing",
+   "g": 90
   },
   {
    "item": "ESC",
-   "g": 80
+   "g": 67
   },
   {
    "item": "Servo",
    "g": 55
   },
   {
-   "item": "ESP32 + wiring",
-   "g": 40
+   "item": "ESP32 + leads",
+   "g": 45
   },
   {
    "item": "Hardware",
    "g": 40
   }
  ],
+ "cg": {
+  "mass_g": 1227,
+  "x": -16.5,
+  "y": -1.0,
+  "z": 29.6,
+  "rear_pct": 56,
+  "tip_g": 2.77
+ },
  "models": {
-  "pan_rear": "chassis",
-  "pan_front": "chassis",
-  "splice_servo_block": "chassis",
-  "esp32_tray": "chassis",
-  "front_end": "front",
-  "upper_arm_L": "front",
-  "upper_arm_R": "front",
-  "knuckle_L": "front",
-  "knuckle_R": "front",
-  "bump_stops": "front",
-  "tie_rod_L_horn": "steering",
-  "tie_rod_L_knuckle": "steering",
-  "tie_rod_R_horn": "steering",
-  "tie_rod_R_knuckle": "steering",
-  "pod_floor": "rear",
-  "pod_plate_L": "rear",
-  "pod_plate_R_motor": "rear",
-  "pod_brace": "rear",
-  "spool": "rear",
-  "spur_clamp": "rear",
-  "ref_wheels": "bought",
-  "ref_battery": "bought",
-  "ref_motor": "bought",
-  "ref_spur": "bought",
-  "ref_pinion": "bought",
-  "ref_servo": "bought",
-  "ref_esc": "bought",
-  "ref_rear_axle": "bought",
-  "ref_kingpins": "bought",
-  "ref_collars": "bought"
- }
+  "pan_rear": {
+   "g": "chassis"
+  },
+  "pan_front": {
+   "g": "chassis"
+  },
+  "splice_servo_block": {
+   "g": "chassis"
+  },
+  "esp32_cradle": {
+   "g": "chassis"
+  },
+  "esp32_lid": {
+   "g": "chassis"
+  },
+  "front_end": {
+   "g": "front"
+  },
+  "upper_arm_L": {
+   "g": "front"
+  },
+  "upper_arm_R": {
+   "g": "front"
+  },
+  "knuckle_L": {
+   "g": "front"
+  },
+  "knuckle_R": {
+   "g": "front"
+  },
+  "bump_stops": {
+   "g": "front"
+  },
+  "tie_rod_L_horn": {
+   "g": "steering"
+  },
+  "tie_rod_L_knuckle": {
+   "g": "steering"
+  },
+  "tie_rod_R_horn": {
+   "g": "steering"
+  },
+  "tie_rod_R_knuckle": {
+   "g": "steering"
+  },
+  "pod_floor": {
+   "g": "rear"
+  },
+  "pod_plate_L": {
+   "g": "rear"
+  },
+  "pod_plate_R_motor": {
+   "g": "rear"
+  },
+  "pod_brace": {
+   "g": "rear"
+  },
+  "spool": {
+   "g": "rear"
+  },
+  "spur_clamp": {
+   "g": "rear"
+  },
+  "ref_tires": {
+   "g": "wheels",
+   "c": "#2b2d30",
+   "o": 1
+  },
+  "ref_rims": {
+   "g": "wheels",
+   "c": "#c9ced3",
+   "o": 1
+  },
+  "ref_battery": {
+   "g": "electronics",
+   "c": "#1d1f22",
+   "o": 1
+  },
+  "ref_esc": {
+   "g": "electronics",
+   "c": "#2a2d31",
+   "o": 1
+  },
+  "ref_esp32": {
+   "g": "electronics",
+   "c": "#14181c",
+   "o": 1
+  },
+  "ref_esp32_pins": {
+   "g": "electronics",
+   "c": "#c8a24a",
+   "o": 1
+  },
+  "ref_servo": {
+   "g": "electronics",
+   "c": "#1f2124",
+   "o": 1
+  },
+  "ref_servo_horn": {
+   "g": "electronics",
+   "c": "#e4e4e4",
+   "o": 1
+  },
+  "ref_leads": {
+   "g": "electronics",
+   "c": "#b8432f",
+   "o": 1
+  },
+  "ref_motor": {
+   "g": "drivetrain",
+   "c": "#4a5058",
+   "o": 1
+  },
+  "ref_spur": {
+   "g": "drivetrain",
+   "c": "#ebe7dc",
+   "o": 1
+  },
+  "ref_pinion": {
+   "g": "drivetrain",
+   "c": "#b8bcc2",
+   "o": 1
+  },
+  "ref_rear_axle": {
+   "g": "drivetrain",
+   "c": "#9aa3ab",
+   "o": 1
+  },
+  "ref_collars": {
+   "g": "drivetrain",
+   "c": "#9aa3ab",
+   "o": 1
+  },
+  "ref_kingpins": {
+   "g": "front",
+   "c": "#9aa3ab",
+   "o": 1
+  },
+  "ref_body": {
+   "g": "body",
+   "c": "#dfe6ec",
+   "o": 0.32
+  },
+  "ref_windows": {
+   "g": "body",
+   "c": "#1c2329",
+   "o": 0.5
+  },
+  "ref_wing": {
+   "g": "body",
+   "c": "#dfe6ec",
+   "o": 0.45
+  }
+ },
+ "body_h": 123
 }
