@@ -39,7 +39,7 @@ M4_SHOULDER = 5.0 + 0.15 + HOLE_COMP  # uxcell shoulder bolt is 5 mm, not 4
 
 # drivetrain: 48P pinion/spur, 540 can motor
 PINION_T, SPUR_T, DP = 14, 87, 48.0   # 14T for the 3600Kv QR3650: 6.21:1, slots fit 13-17T
-CENTRE = (PINION_T + SPUR_T) / DP / 2 * 25.4      # 27.25 mm
+CENTRE = (PINION_T + SPUR_T) / DP / 2 * 25.4      # 26.72 mm for 14T
 SPUR_D = SPUR_T / DP * 25.4                        # 46.0 mm
 MOTOR_D, MOTOR_L, MOTOR_HOLE_SPC = 36.0, 53.0, 25.0  # 3650 can (QR3650 36x52.8); 540 std M3 @ 25, MEASURE yours
 MOTOR_X = RA_X - CENTRE            # behind the axle: clears the pod pivot, loads the driven wheels
@@ -54,8 +54,9 @@ KINGPIN_Y = 56.0                    # inboard of the bearing housing
 KNUCKLE_Z = (22.0, 36.0)            # barrel on the kingpin: spring gap above, droop room below
 BUMP_MM, DROOP_MM = 7.0, 5.0        # travel the checks prove clear; bump_stop sleeve enforces 7
 MAX_LOCK_DEG = 28.0                 # firmware endpoint; the sweep check proves it clears
-STEER_ARM = 16.0                    # kingpin to tie-rod eye, straight back
-HORN_R = 12.0                       # horn hole used, pointing REARWARD; nearest hole on the stock horn
+STEER_ARM = 14.0                    # kingpin to tie-rod eye
+STEER_ARM_OUT = 0.4                 # eye sits 0.4 x STEER_ARM outboard of straight-back (about 22 deg)
+HORN_R = 12.0                       # horn hole used, pointing FORWARD; drill the stock horn hole to 3.0 mm
 HORN_TOP_Z = 56.0                   # VERIFY: top face of the horn on the mounted servo
 EYE_T = 3.0                         # tie-rod eye thickness; both rods stack on one horn bolt
 EYE_Z = {1: HORN_TOP_Z + 1.6, -1: HORN_TOP_Z + 1.6 + EYE_T + 0.2}   # left rod low, right rod high
@@ -65,6 +66,8 @@ UPPER_Z = (50.0, 55.0)              # 14 mm spring gap; housing clears the arm t
 
 POD_PLATE_Y, POD_T = 45.0, 5.0      # pod side plates (PETG: motor runs hot)
 PIVOT_X, PIVOT_Z = -78.0, 16.0
+LUG_Y0, LUG_T = 14.2, 9.4           # pan pivot lugs: 9.4 + 0.6 gap = the 10 mm shoulder, so it never clamps
+SPRING_X, SPRING_Y = -102.0, 34.0   # rear pod spring: clear of the brace, the pivot bolt head and the battery
 POD_BRACE_X = RA_X + 8              # brace sits between the plates, ahead of the axle
 
 BATT = (138.0, 47.0, 25.0)          # 2S hard case, VERIFY the pack you buy
@@ -108,13 +111,13 @@ def pan():
     p += bx(-70, 72, -1.0, 1.0, TOP, TOP + RAIL_H)           # centre rib = battery wall
     # pod pivot lugs
     for s in (1, -1):
-        y0, y1 = sorted((s * 14, s * 24))
+        y0, y1 = sorted((s * LUG_Y0, s * (LUG_Y0 + LUG_T)))
         p += bx(PAN_X0, PIVOT_X + 6, y0, y1, TOP, PIVOT_Z + 6)
         p -= cy(PIVOT_X, PIVOT_Z, y0 - 1, y1 + 1, M4_SHOULDER)
-    # rear spring brace: post at Y+25, arm back over the pod
-    p += bx(PAN_X0, -80, 20, 30, TOP, 44)
-    p += bx(-122, -80, 20, 30, 40, 44)
-    p -= cz(-116, 25, 39, 45, M3_CLR)
+    # rear spring brace: post outboard of the +Y pivot bolt head, arm back over the pod floor
+    p += bx(PAN_X0, -80, SPRING_Y - 4, SPRING_Y + 4, TOP, 44)
+    p += bx(SPRING_X - 6, -80, SPRING_Y - 4, SPRING_Y + 4, 40, 44)
+    p -= cz(SPRING_X, SPRING_Y, 39, 45, M3_CLR)
     # front-end bolt pattern (inserts live in the front end, bolts come up from below)
     for x in (112, 140):
         for y in (-30, 30):
@@ -122,7 +125,7 @@ def pan():
             p -= cz(x, y, FLOOR_Z - 1, FLOOR_Z + 1.8, 6.0)    # button-head counterbore
     # splice block bolts either side of the joint
     for x in (JOINT_X - 7, JOINT_X + 7):
-        for y in (-40, -22, 22, 40):
+        for y in SPLICE_Y:
             p -= cz(x, y, FLOOR_Z - 1, TOP + 1, M3_CLR)
             p -= cz(x, y, FLOOR_Z - 1, FLOOR_Z + 1.8, 6.0)
     # battery strap slots (20 mm velcro) and ESC / RX tie-down slots
@@ -137,9 +140,12 @@ def pan():
 
 def pan_halves():
     full = pan()
-    rear = full & bx(PAN_X0 - 5, JOINT_X, -60, 60, 0, 60)
+    rear = full & bx(-300, JOINT_X, -60, 60, 0, 60)                  # keep the spring arm
     front = full & bx(JOINT_X, PAN_X1 + 5, -60, 60, 0, 60)
     return rear, front
+
+
+SPLICE_Y = (-44, -36, 22, 40)        # clear of the servo pocket (Y -30.8 .. 10.5)
 
 
 def splice_servo_block():
@@ -147,7 +153,7 @@ def splice_servo_block():
     sx, sy, sz = SERVO
     b = bx(JOINT_X - 12, JOINT_X + 12, -HALF_W + RAIL_T, HALF_W - RAIL_T, TOP, TOP + 8)
     for x in (JOINT_X - 7, JOINT_X + 7):
-        for y in (-40, -22, 22, 40):
+        for y in SPLICE_Y:
             b -= insert(x, y, TOP, down=False)
     # servo: spline on the centreline, case runs to -Y
     y_near = SPLINE_OFF
@@ -157,7 +163,8 @@ def splice_servo_block():
     ymid = (y0 + y1) / 2
     for s in (1, -1):
         py = ymid + s * SERVO_HOLE_SPC / 2
-        post = bx(SERVO_X - 5, SERVO_X + 5, py - 3.5, py + 3.5, TOP, TOP + SERVO_EAR_Z)
+        pa, pb = sorted((py - s * 4.0, py + s * 5.0))                       # thin side faces the case
+        post = bx(SERVO_X - 5, SERVO_X + 5, pa, pb, TOP, TOP + SERVO_EAR_Z)
         post -= insert(SERVO_X, py, TOP + SERVO_EAR_Z)
         b += post
     return b
@@ -166,7 +173,7 @@ def splice_servo_block():
 # ---------------------------------------------------------------- front end
 def front_end():
     """Base + centre tower + both lower arms, one print, kingpins pressed in."""
-    f = bx(104, 150, -40, 40, TOP, TOP + 5)
+    f = bx(104, 150, -40, 40, TOP, TOP + 7)                          # 7 mm: the 6.3 mm inserts stay inside
     f += bx(FA_X - 9, FA_X + 9, -30, 30, TOP, UPPER_Z[0])          # tower
     for s in (1, -1):
         y0, y1 = sorted((s * 30, s * (KINGPIN_Y + 7)))
@@ -210,10 +217,13 @@ def knuckle(side=1):
     k += cy(FA_X, AXLE_Z, y_in, y_out, 16)
     yb0, yb1 = sorted((s * KINGPIN_Y, s * 64))
     k += bx(FA_X - 5, FA_X + 5, yb0, yb1, kz0, kz1)
-    # steering arm: straight back (steering() shows this gives ~90% Ackermann with the
-    # rearward horn), post up to this side's tie-rod eye height
-    arm_x, arm_y = FA_X - STEER_ARM, s * KINGPIN_Y
-    k += bx(arm_x, FA_X, arm_y - 3, arm_y + 3, kz1 - 4, kz1)
+    # steering arm: back and angled outboard (steering() solves this to ~98% Ackermann
+    # with the forward horn), post up to this side's tie-rod eye height
+    import math
+    arm_x, arm_y = arm_tip(s)
+    ln = math.dist((arm_x, arm_y), (FA_X, s * KINGPIN_Y))
+    ang = math.degrees(math.atan2(arm_y - s * KINGPIN_Y, arm_x - FA_X))
+    k += Pos((arm_x + FA_X) / 2, (arm_y + s * KINGPIN_Y) / 2, kz1 - 2) * Rot(0, 0, ang) * Box(ln, 6, 4)
     top = EYE_Z[s] - 1.6
     k += cz(arm_x, arm_y, kz1 - 4, top, 8)
     k -= insert(arm_x, arm_y, top)                                   # M3 pivot bolt through the eye
@@ -232,45 +242,63 @@ def _rot(x, y, a):
     return x * math.cos(a) - y * math.sin(a), x * math.sin(a) + y * math.cos(a)
 
 
-def steering():
-    """Planar linkage solve: servo horn (pointing rearward, both rods on one bolt) ->
-    tie rod -> knuckle arm. Returns servo angle for MAX_LOCK, inner/outer angles,
-    Ackermann %, bump steer, rod length. Pure math, no CAD."""
-    import math
-    hx, hy = SERVO_X, 0.0
+def arm_tip(s, p=0.0):
+    """Knuckle steering-arm eye (x, y) for side s at wheel angle p (rad, + = turning left)."""
+    vx, vy = _rot(-STEER_ARM, s * STEER_ARM_OUT * STEER_ARM, p)
+    return FA_X + vx, s * KINGPIN_Y + vy
 
-    def arm(s, p):
-        vx, vy = _rot(-STEER_ARM, 0.0, p)
-        return FA_X + vx, s * KINGPIN_Y + vy
+
+def steering():
+    """Planar linkage solve: servo horn (pointing forward, both rods on one bolt) ->
+    tie rod -> knuckle arm. Each wheel is tracked from straight-ahead in small steps so
+    the solver stays on the physical branch. Inner/outer are named by the turn direction.
+    Returns, for BOTH turn directions, the servo angle for MAX_LOCK on the inner wheel,
+    Ackermann % and the smallest transmission angle; plus bump steer and rod length."""
+    import math
 
     def horn(t):
-        vx, vy = _rot(-HORN_R, 0.0, t)
-        return hx + vx, hy + vy
+        vx, vy = _rot(HORN_R, 0.0, t)
+        return SERVO_X + vx, vy
 
-    L = math.dist(horn(0), arm(1, 0))
+    L = {s: math.dist(horn(0), arm_tip(s)) for s in (1, -1)}
 
-    def phi(s, t, dz=0.0):                       # wheel angle (rad) for servo angle t
-        h = horn(t)
-        f = lambda p: math.dist(h, arm(s, p)) ** 2 + dz * dz - L * L
-        for i in range(1, 1400):                 # nearest root to straight-ahead
-            p0, p1 = i * 1e-3, (i - 1) * 1e-3
-            for a, b in ((p0, p1), (-p0, -p1)):
-                if f(a) * f(b) <= 0:
-                    return (a + b) / 2
-        raise ValueError("linkage toggles before lock")
+    def track(s, t, dz=0.0, steps=200):
+        p = 0.0
+        for i in range(1, steps + 1):
+            h = horn(t * i / steps)
+            f = lambda q: math.dist(h, arm_tip(s, q)) ** 2 + dz * dz - L[s] ** 2
+            for _ in range(40):                  # Newton from the previous step
+                d = (f(p + 1e-7) - f(p - 1e-7)) / 2e-7
+                if abs(d) < 1e-12:
+                    raise ValueError("linkage toggles")
+                p -= f(p) / d
+            if abs(p) > 1.2:
+                raise ValueError("linkage runs away")
+        h, a, k = horn(t), arm_tip(s, p), (FA_X, s * KINGPIN_Y)
+        u, w = (a[0] - h[0], a[1] - h[1]), (a[0] - k[0], a[1] - k[1])
+        ta = math.degrees(math.acos(abs(u[0] * w[0] + u[1] * w[1]) / (math.hypot(*u) * math.hypot(*w))))
+        return p, ta
 
-    lock = math.radians(MAX_LOCK_DEG)
-    t = 0.0
-    while abs(phi(1, t)) < lock:                 # servo angle that puts the inner wheel at lock
-        t -= math.radians(0.1)
-    inner, outer = abs(phi(1, t)), abs(phi(-1, t))
-    ideal = math.atan(1 / (1 / math.tan(inner) + 2 * KINGPIN_Y / WB))
-    return {"servo_deg": round(math.degrees(abs(t)), 1),
-            "inner_deg": round(math.degrees(inner), 1), "outer_deg": round(math.degrees(outer), 1),
-            "ideal_outer_deg": round(math.degrees(ideal), 1),
+    out = {}
+    for sign in (1, -1):                         # both servo directions
+        lock, d = math.radians(MAX_LOCK_DEG), 0.0
+        while True:
+            d += 0.1
+            t = sign * math.radians(d)
+            (pl, tl), (pr, tr) = track(1, t, steps=60), track(-1, t, steps=60)
+            left_turn = pl > 0
+            inner, outer = (abs(pl), abs(pr)) if left_turn else (abs(pr), abs(pl))
+            if inner >= lock or d > 70:
+                break
+        ideal = math.atan(1 / (1 / math.tan(inner) + 2 * KINGPIN_Y / WB))
+        out["left" if left_turn else "right"] = {
+            "servo_deg": round(d, 1), "inner_deg": round(math.degrees(inner), 1),
+            "outer_deg": round(math.degrees(outer), 1), "ideal_outer_deg": round(math.degrees(ideal), 1),
             "ackermann_pct": round(100 * (inner - outer) / (inner - ideal)),
-            "bump_steer_deg_per_3mm": round(math.degrees(phi(1, 0, 3.0)), 2),
-            "rod_mm": round(L, 1)}
+            "min_transmission_deg": round(min(tl, tr))}
+    out["bump_steer_deg_per_3mm"] = round(math.degrees(track(1, 0.0, 3.0, steps=1)[0]), 2)
+    out["rod_mm"] = round(L[1], 1)
+    return out
 
 
 def tie_rod_half(side=1, end="horn"):
@@ -278,8 +306,8 @@ def tie_rod_half(side=1, end="horn"):
     in an insert in each half; turning the knuckle half 180 deg moves toe by 0.25 mm."""
     import math
     s = side
-    p0 = (SERVO_X - HORN_R, 0.0)
-    p1 = (FA_X - STEER_ARM, s * KINGPIN_Y)
+    p0 = (SERVO_X + HORN_R, 0.0)
+    p1 = arm_tip(s)
     L = math.dist(p0, p1)
     ang = math.degrees(math.atan2(p1[1] - p0[1], p1[0] - p0[0]))
     gap = 4.0
@@ -295,6 +323,11 @@ def tie_rod_half(side=1, end="horn"):
 
 
 # ---------------------------------------------------------------- rear pod
+RAIL_Z = 16.0                       # floor rails Z 12..20, plate bolts go in sideways at this height
+RAIL_X = {1: (MOTOR_X - 20, RA_X + 18), -1: (MOTOR_X + 21, RA_X + 18)}   # -Y rail stops short of the motor can
+RAIL_BOLTS = {1: (MOTOR_X - 12, RA_X - 8, RA_X + 12), -1: (MOTOR_X + 26, RA_X + 12)}
+
+
 def pod_plate(side=1):
     """Side plate: one 685ZZ for the axle. The right (-Y) plate also mounts the motor."""
     s = side
@@ -302,18 +335,17 @@ def pod_plate(side=1):
     p = bx(MOTOR_X - 20, RA_X + 18, y0, y1, 12, 52)                  # sits on the floor
     p -= cy(RA_X, AXLE_Z, y0 - 1, y1 + 1, BRG_OD)
     if s < 0:
-        # motor boss clearance + two M3 slots: swinging the slot about the axle sets mesh
+        # motor boss clearance + two M3 slots: sliding the motor along X sets mesh
         p -= cy(MOTOR_X, AXLE_Z, y0 - 1, y1 + 1, 13.5)
         for dz in (MOTOR_HOLE_SPC / 2, -MOTOR_HOLE_SPC / 2):
             for dx in (-1.5, 0, 1.5):
                 p -= cy(MOTOR_X + dx, AXLE_Z + dz, y0 - 1, y1 + 1, M3_CLR)
-        p -= cy(MOTOR_X, AXLE_Z, y0 - 1, y1 + 1, 13.5)
     else:
         p -= cy(MOTOR_X, AXLE_Z, y0 - 1, y1 + 1, 24)                 # lightening
     p -= cy(POD_BRACE_X + 5, 48, y0 - 1, y1 + 1, M3_CLR)              # brace bolt
-    # bolt tabs to the pod floor
-    for x in (MOTOR_X - 12, RA_X + 12):
-        p -= cz(x, s * (POD_PLATE_Y + POD_T / 2), 9, 18, M3_CLR)
+    # side bolts into the floor rail inserts
+    for x in RAIL_BOLTS[s]:
+        p -= cy(x, RAIL_Z, y0 - 1, y1 + 1, M3_CLR)
     return p
 
 
@@ -321,10 +353,12 @@ def pod_floor():
     f = bx(MOTOR_X - 20, PAN_X0 - 2.5, -POD_PLATE_Y - POD_T, POD_PLATE_Y + POD_T, 8, 12)
     # motor can and spur clearance
     f -= bx(MOTOR_X - 19, MOTOR_X + 19, -POD_PLATE_Y, 6, 11, 13)
-    for s in (1, -1):
-        for x in (MOTOR_X - 12, RA_X + 12):
-            f -= insert(x, s * (POD_PLATE_Y + POD_T / 2), 12)
-    # plates register in shallow grooves
+    for s in (1, -1):                                                # rails the plates bolt to sideways
+        ya, yb = sorted((s * (POD_PLATE_Y - 8), s * POD_PLATE_Y))
+        f += bx(*RAIL_X[s], ya, yb, 12, 20)
+        for x in RAIL_BOLTS[s]:
+            yi0, yi1 = sorted((s * POD_PLATE_Y + s * 0.01, s * (POD_PLATE_Y - M3_INS_DEPTH)))
+            f -= cy(x, RAIL_Z, yi0, yi1, M3_INS)
     # pivot lug: rides between the pan lugs on the M4 shoulder bolt
     # Each uxcell M4 shoulder bolt (5 x 10 mm shoulder) passes through a 10 mm pan lug
     # and threads into an M4 heat-set insert here, so the shoulder is the bearing.
@@ -333,9 +367,9 @@ def pod_floor():
     for s in (1, -1):
         y0, y1 = sorted((s * 13.7, s * 6.0))
         f -= cy(PIVOT_X, PIVOT_Z, y0, y1, 5.6)                        # M4 insert pilot
-    # spring seat under the brace arm + insert for the M3x35 spring bolt
-    f += cz(-116, 25, 12, 15, 10)
-    f -= insert(-116, 25, 15)
+    # spring seat under the pan's spring arm + insert for the M3x35 spring bolt
+    f += cz(SPRING_X, SPRING_Y, 12, 15, 10)
+    f -= insert(SPRING_X, SPRING_Y, 15)
     # rear top brace ties the two plates so the pod does not lozenge
     return f
 
@@ -352,6 +386,7 @@ def pod_brace():
     return b
 
 
+AXLE_FLAT = 2.0                     # ground flat sits 2.0 mm from the axle centre (0.5 mm deep)
 SPUR_W = 6.0                        # VERIFY: thickness of the spur you buy at the hub
 SPUR_FACE = -POD_PLATE_Y - POD_T - 11.0  # outboard face of the spur, against the flange
 CLAMP_T = 3.5
@@ -365,15 +400,19 @@ def _bolt_circle(r=10.0, n=3):
 
 def spool():
     """Locked rear hub. The spur (centre drilled to 12.2 mm) is sandwiched between this
-    flange and spur_clamp by 3 M3 bolts; an M3 pinch bolt grips the axle's ground flat."""
-    y_in = SPUR_FACE + SPUR_W + CLAMP_T                              # inboard end, clear of the plate
-    y_out = SPUR_FACE - 8.0
-    s = cy(RA_X, AXLE_Z, y_out, y_in, 12)
+    flange and spur_clamp by 3 M3 bolts. The bore is a D that keys on a 0.5 mm flat ground
+    along the axle, so torque goes through the flat. Axially the 7 mm tip bears on the right
+    bearing's inner race and a shaft collar outboard holds it there."""
+    y_hub = SPUR_FACE + SPUR_W + CLAMP_T                             # hub end under the clamp ring
+    y_tip = -POD_PLATE_Y - POD_T                                     # right bearing's outer face
+    y_out = SPUR_FACE - 5.0
+    s = cy(RA_X, AXLE_Z, y_out, y_hub, 12)
+    s += cy(RA_X, AXLE_Z, y_hub, y_tip, 7)                            # touches the inner race only
     s += cy(RA_X, AXLE_Z, SPUR_FACE - 3, SPUR_FACE, 30)               # flange
-    s -= cy(RA_X, AXLE_Z, y_out - 1, y_in + 1, 5.2)
+    s -= cy(RA_X, AXLE_Z, y_out - 1, y_tip + 1, 5.2) & bx(RA_X - 4, RA_X + 4, y_out - 1, y_tip + 1,
+                                                          AXLE_Z - 4, AXLE_Z + AXLE_FLAT + 0.1)
     for x, z in _bolt_circle():
         s -= cy(x, z, SPUR_FACE - 4, SPUR_FACE + 1, M3_CLR)
-    s -= cx(y_out + 3, AXLE_Z, RA_X - 7, RA_X + 7, M3_CLR)            # pinch bolt, outboard of the flange
     return s
 
 
@@ -431,15 +470,22 @@ def wheel(x, y):
 
 def refs():
     r = {}
-    r["wheels"] = Compound([wheel(x, s * TRACK / 2) for x in (FA_X, RA_X) for s in (1, -1)])
+    # tire + rim lip only (the axle and hub pass through the middle); the sweeps use solid wheel()
+    r["wheels"] = Compound([wheel(x, s * TRACK / 2) - cy(x, AXLE_Z, s * TRACK / 2 - 14, s * TRACK / 2 + 14, 40)
+                            for x in (FA_X, RA_X) for s in (1, -1)])
     r["battery"] = bx(BATT_X0, BATT_X0 + BATT[0], 1.2, 1.2 + BATT[1], TOP, TOP + BATT[2])
     r["motor"] = cy(MOTOR_X, AXLE_Z, -POD_PLATE_Y, -POD_PLATE_Y + MOTOR_L, MOTOR_D)
-    r["spur"] = cy(RA_X, AXLE_Z, SPUR_FACE, SPUR_FACE + SPUR_W, SPUR_D)
+    r["spur"] = cy(RA_X, AXLE_Z, SPUR_FACE, SPUR_FACE + SPUR_W, SPUR_D) - cy(RA_X, AXLE_Z, SPUR_FACE - 1, SPUR_FACE + SPUR_W + 1, 12.2)
     r["pinion"] = cy(MOTOR_X, AXLE_Z, -POD_PLATE_Y - POD_T - 1, -POD_PLATE_Y - POD_T - 11, PINION_T / DP * 25.4)
     sx, sy, sz = SERVO
     r["servo"] = bx(SERVO_X - sx / 2, SERVO_X + sx / 2, SPLINE_OFF - sy, SPLINE_OFF, TOP, TOP + sz)
     r["esc"] = bx(-42, 0, -46, -10, TOP, TOP + 33)                   # VERIFY ESC size
-    r["rear_axle"] = cy(RA_X, AXLE_Z, -TRACK / 2 - 8, TRACK / 2 + 8, 5)
+    r["rear_axle"] = (cy(RA_X, AXLE_Z, -TRACK / 2 - 18, TRACK / 2 + 18, 5) -
+                      bx(RA_X - 3, RA_X + 3, -TRACK / 2 - 19, TRACK / 2 + 19, AXLE_Z + AXLE_FLAT, AXLE_Z + 3))
+    # 5 mm shaft collars: left outboard of the left plate, right outboard of the spool
+    y_sp = SPUR_FACE - 5.0
+    collar = lambda y0, y1: cy(RA_X, AXLE_Z, y0, y1, 10) - cy(RA_X, AXLE_Z, y0 - 1, y1 + 1, 5.05)
+    r["collars"] = Compound([collar(POD_PLATE_Y + POD_T + 0.5, POD_PLATE_Y + POD_T + 5.5), collar(y_sp - 5, y_sp)])
     r["kingpins"] = Compound([cz(FA_X, s * KINGPIN_Y, KP_Z0, KP_Z1, 3) for s in (1, -1)])
     return r
 
@@ -468,7 +514,8 @@ def parts():
         "tie_rod_R_horn": (tie_rod_half(-1, "horn"), "PETG, flat, 100% infill"),
         "tie_rod_R_knuckle": (tie_rod_half(-1, "knuckle"), "PETG, flat, 100% infill"),
         "hex_hub_x4": (Pos(0, -150, 0) * hex_hub(), "PETG, collar down, 100% infill, print 4"),
-        "bump_stop_x2": (Pos(30, -150, 0) * bump_stop(), "PETG, upright, print 2"),
+        "bump_stops": (Compound([Pos(FA_X, s * KINGPIN_Y, KNUCKLE_Z[1]) * bump_stop() for s in (1, -1)]),
+                       "PETG, upright, print 2"),
     }
 
 
@@ -477,7 +524,7 @@ def checks(ps, r):
     def gap(a, b):
         return a.distance_to(b)
     solid = {k: v[0] for k, v in ps.items()}
-    assert CENTRE > MOTOR_D / 2 - 5, "motor too close to axle"
+    assert gap(r["motor"], r["rear_axle"]) > 1, "motor can hits the rear axle"
     assert AXLE_Z - SPUR_D / 2 > 6, f"spur ground clearance {AXLE_Z - SPUR_D / 2:.1f} mm"
     assert AXLE_Z - MOTOR_D / 2 > 10, "motor can too low"
     assert gap(r["motor"], solid["pod_floor"]) > 0.5, "motor hits pod floor"
@@ -490,18 +537,25 @@ def checks(ps, r):
     # every printed part fits the Ender 3 V3 bed in at least one orientation
     for k, (s, _) in ps.items():
         bb = sorted([s.bounding_box().size.X, s.bounding_box().size.Y, s.bounding_box().size.Z])
-        assert bb[1] <= 215 and bb[2] <= 215 * 1.41 and bb[0] <= 245, f"{k} too big {bb}"
+        assert bb[1] <= 215 and bb[2] <= 245, f"{k} does not fit a 220x220x250 bed {bb}"
         assert s.is_valid, f"{k} invalid solid"
     st = steering()
-    assert 70 <= st["ackermann_pct"] <= 130, f"Ackermann {st}"
-    assert 25 <= st["servo_deg"] <= 45, f"servo throw for lock {st}"
+    for turn in ("left", "right"):
+        assert turn in st, f"never reached {turn} lock {st}"
+        assert 70 <= st[turn]["ackermann_pct"] <= 130, f"Ackermann {st}"
+        assert 25 <= st[turn]["servo_deg"] <= 45, f"servo throw for lock {st}"
+        assert st[turn]["min_transmission_deg"] >= 40, f"linkage near toggle {st}"
+    assert st["left"]["servo_deg"] == st["right"]["servo_deg"], f"asymmetric linkage {st}"
     assert abs(st["bump_steer_deg_per_3mm"]) < 0.5, f"bump steer {st}"
-    # printed parts must not overlap each other in the assembled pose
-    names = list(solid)
+    # nothing overlaps anything in the assembled pose: printed parts AND the bought parts
+    # (axle, kingpins, collars, motor, spur, pinion, servo, ESC, battery, wheels)
+    allb = {k: v for k, v in solid.items() if k != "hex_hub_x4"}
+    allb.update({"ref_" + k: v for k, v in r.items()})
+    names = list(allb)
     for i, a in enumerate(names):
         for b in names[i + 1:]:
-            v = (solid[a] & solid[b]).volume
-            assert v < 1.0, f"{a} overlaps {b} by {v:.1f} mm3"
+            v = (allb[a] & allb[b]).volume
+            assert v < 0.01, f"{a} overlaps {b} by {v:.2f} mm3"
     # steering sweep: wheel + knuckle turn about each kingpin to full lock both ways
     fixed = [solid[k] for k in ("front_end", "upper_arm_L", "upper_arm_R", "pan_front",
                                 "splice_servo_block")]
