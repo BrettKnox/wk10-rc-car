@@ -1,6 +1,6 @@
 """Engineering drawing sheets, chart data and viewer meshes for the WK-10 review page.
 
-Run:  C:/Users/bman0/Code/OpsBrain/.venv/Scripts/python.exe C:/Users/bman0/Code/rc-car/cad/sheets.py
+Run:  python cad/sheets.py
 Writes review/sheets/*.svg (hidden-line-removed orthographic views, third-angle, mm),
 review/data.json (steering sweep, bump steer, gearing, masses, parts) and review/models/*.stl.
 Every dimension is computed from the same wk10.py parameters the parts are built from.

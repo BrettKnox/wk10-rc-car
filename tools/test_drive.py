@@ -1,5 +1,5 @@
 """Checks drive.py against a fake car (stdlib only, no hardware):
-    python C:/Users/bman0/Code/rc-car/tools/test_drive.py
+    python tools/test_drive.py
 1. run() arms (d=0) before it sends any throttle,
 2. it always ends with d=0 stop commands,
 3. if the car reports it left web control mid-run, run() raises instead of carrying on,

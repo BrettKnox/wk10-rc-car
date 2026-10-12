@@ -1,6 +1,6 @@
 """WK-10: printable 1/10 on-road pan car built around parts already on the shelf.
 
-Run:  C:/Users/bman0/Code/OpsBrain/.venv/Scripts/python.exe C:/Users/bman0/Code/rc-car/cad/wk10.py
+Run:  python cad/wk10.py
 Writes every printable part (assembly pose; README gives the print orientation) to cad/out/*.stl + *.step and the
 assembly to cad/out/wk10_assembly.step, then runs the fit checks at the bottom.
 

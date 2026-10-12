@@ -1,8 +1,8 @@
 """Drive WK-10 from Python over the car's own Wi-Fi (stdlib only).
 
 Join the car's "WK10-xxxx" network, then:
-    python C:/Users/bman0/Code/rc-car/tools/drive.py figure8
-    python C:/Users/bman0/Code/rc-car/tools/drive.py state
+    python tools/drive.py figure8
+    python tools/drive.py state
 
 The car stops on its own if commands stop for failsafeMs (250 ms default), so a crash,
 Ctrl+C or a dropped link all end at neutral. Commands are sent at 20 Hz with a rising

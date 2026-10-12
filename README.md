@@ -1,14 +1,10 @@
 # WK-10: printable 1/10 on-road pan car
 
-A rear-wheel-drive 1/10 on-road car you can print on the Ender 3 V3, built around parts already in the Vision inventory: the Shaluoman foam tires, an MG996R servo, two ESP32 dev boards, 685ZZ bearings from the 68 pc kit, the 3 mm stainless rods, the spring kit, the M3/M4 hardware and the heat-set inserts. You drive it from a phone, from Python, or from a second ESP32 used as a handheld transmitter. Purchases total about $285 with tax (itemised below).
+A rear-wheel-drive 1/10 on-road car you can print on the Ender 3 V3, built around parts I already had: the Shaluoman foam tires, an MG996R servo, two ESP32 dev boards, 685ZZ bearings from the 68 pc kit, the 3 mm stainless rods, the spring kit, the M3/M4 hardware and the heat-set inserts. You drive it from a phone, from Python, or from a second ESP32 used as a handheld transmitter. Purchases total about $285 with tax (itemised below).
 
 Status 2026-10-12: designed, every part modelled and fit-checked in CAD, firmware compiles. Nothing printed or bought yet.
 
 ![iso](cad/out/render_iso.png)
-
-## Where this came from
-
-The RC car in Vision (`C:\Users\bman0\Code\OpsBrain\data\`, project row 33 "RC-Car") was pipeline test data and never a car. Its brief was "A 40mm cube with a 12mm bore", its research finding was a fixture with placeholder Amazon links, and its BOM pointed at an aluminium "printed chassis plate" with `unobtanium_rating: high`. The registry already flags it as a fixture (`C:\Users\bman0\Code\studio\registry\orchestrator\registry.json`, id `rc-car`). This folder is the real design. Nothing in Vision or the registry was changed.
 
 ## Layout and why
 
@@ -75,7 +71,7 @@ Headroom under $300 is about $23. Cheaper route if you want it: the Surpass 3650
 
 Not needed any more: ball links and turnbuckles (printed tie rods), the Hobbypark hubs (they need an M4-threaded axle tip; printed `hex_hub` replaces them).
 
-### Owned (from the Vision inventory)
+### Already owned
 
 | Part | Qty | Used for |
 |---|---|---|
@@ -100,7 +96,7 @@ Not needed any more: ball links and turnbuckles (printed tie rods), the Hobbypar
 `cad/out/print/` holds a print-ready STL for every part, already rotated into its slicer orientation and sitting on Z=0, plus `calibration_coupon.stl`. `cad/out/` holds the same parts in assembly pose as STEP and STL, and `wk10_assembly.step` is the whole car. STLs are regenerated, not committed. Regenerate everything and re-run the fit checks with:
 
 ```bash
-C:/Users/bman0/Code/OpsBrain/.venv/Scripts/python.exe C:/Users/bman0/Code/rc-car/cad/wk10.py
+python cad/wk10.py
 ```
 
 Print the calibration coupon first (PETG, same settings as the bearing parts). Measure every hole with the Kynup caliper. The hole compensation in `wk10.py` (`HOLE_COMP = 0.2`) is an assumed default, not this printer. Change that one knob until a 685ZZ drops into the 11.2 mm hole with a light press, then re-run. Layer height 0.2 mm for everything.
@@ -177,23 +173,23 @@ Three files, Arduino-ESP32 core 3.x:
 Both sketches compile (car 77% of flash, transmitter 68%):
 
 ```bash
-C:/Users/bman0/AppData/Local/arduino-cli/arduino-cli.exe compile --fqbn esp32:esp32:esp32 --libraries C:/Users/bman0/Code/rc-car/firmware/libraries C:/Users/bman0/Code/rc-car/firmware/car_rx
+arduino-cli compile --fqbn esp32:esp32:esp32 --libraries firmware/libraries firmware/car_rx
 ```
 
 The same `wk_selftest()` the car runs at boot also runs on the PC, against the defaults and an asymmetric, reversed, trimmed config. It passes, and three deliberately broken copies of the header (gate that never disarms, slew that ramps from reverse, neutral range widened to 1630 us) each fail it. Rebuild and run it with zig's bundled C++ compiler (project venv, `pip install ziglang`):
 
 ```bash
-C:/Users/bman0/Code/rc-car/.venv/Scripts/python.exe -m ziglang c++ -std=c++17 -w -I C:/Users/bman0/Code/rc-car/firmware/libraries/WkLink C:/Users/bman0/Code/rc-car/firmware/test/host_selftest.cpp -o C:/Users/bman0/Code/rc-car/build/selftest.exe
+python -m ziglang c++ -std=c++17 -w -I firmware/libraries/WkLink firmware/test/host_selftest.cpp -o build/selftest.exe
 ```
 
 ```bash
-C:/Users/bman0/Code/rc-car/build/selftest.exe
+build/selftest.exe
 ```
 
 ### Ways to drive
 
 1. **Phone.** Set `AP_PASS` in `car_rx.ino` (8+ characters; the access point stays off while it reads `CHANGE-ME`). Join Wi-Fi `WK10-xxxx`, open `http://192.168.4.1`. Hold a finger on the pad: up is throttle, sideways steers, lifting the finger stops the car. The car only arms after it has seen the dead-man released; the idle page already sends that, so it arms as soon as the page connects (the status line says `release to arm` if not). Switching apps or locking the phone counts as lifting the finger.
-2. **Python.** On the same Wi-Fi: `python C:/Users/bman0/Code/rc-car/tools/drive.py figure8` drives a 16 second figure-eight at quarter stick (times `maxThrottle`). Write your own `program(t) -> (steer, throttle)` and pass it to `run()`, which arms the car, sends at 20 Hz with rising sequence numbers, aborts loudly if the car ever leaves web control (a slow request lets the failsafe fire and disarm it), and stops the car however the script ends. `python C:/Users/bman0/Code/rc-car/tools/test_drive.py` checks those three behaviours against a fake car on localhost (it passes; it does not test real Wi-Fi latency). Use one web client at a time: the phone page and a script share one sequence counter, and whichever sends the higher number wins. The API is `GET /drive?s=<-1000..1000>&t=<-1000..1000>&d=<0|1>&n=<rising integer>`. A request with an `n` lower than one already seen gets 409 and is ignored. After 1 s with no web commands any `n` is accepted again (the car has already failed safe and disarmed by then), and requests without `n` are always accepted. `GET /state` returns pulses, arming, battery voltage and source.
+2. **Python.** On the same Wi-Fi: `python tools/drive.py figure8` drives a 16 second figure-eight at quarter stick (times `maxThrottle`). Write your own `program(t) -> (steer, throttle)` and pass it to `run()`, which arms the car, sends at 20 Hz with rising sequence numbers, aborts loudly if the car ever leaves web control (a slow request lets the failsafe fire and disarm it), and stops the car however the script ends. `python tools/test_drive.py` checks those three behaviours against a fake car on localhost (it passes; it does not test real Wi-Fi latency). Use one web client at a time: the phone page and a script share one sequence counter, and whichever sends the higher number wins. The API is `GET /drive?s=<-1000..1000>&t=<-1000..1000>&d=<0|1>&n=<rising integer>`. A request with an `n` lower than one already seen gets 409 and is ignored. After 1 s with no web commands any `n` is accepted again (the car has already failed safe and disarmed by then), and requests without `n` are always accepted. `GET /state` returns pulses, arming, battery voltage and source.
 3. **Handheld transmitter.** Second ESP32 with two pots and a dead-man button over ESP-NOW. Wire each pot 3V3 -> 4.7k -> pot -> 2.2k -> GND (10k pots from the WH148 kit) so the travel sits at about 0.43 to 2.38 V, inside the 0.15 to 2.45 V range the ESP32's ADC calibration covers. The transmitter prints the pot millivolts on serial; turn each knob to both stops and put the readings in `MV_MIN` / `MV_MAX`. A reading 150 mV beyond a stop, or a raw reading pinned at either rail (an open GND or 3V3 lead), means a broken wire, and the transmitter sends stop instead of full lock or full throttle. Bench-test it by pulling each pot lead in turn. While it is talking it overrides the phone and API. When it drops out the car goes to failsafe, and the phone has to be released and pressed again to take over.
 
 ### Tuning without reflashing
