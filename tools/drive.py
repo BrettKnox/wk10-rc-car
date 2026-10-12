@@ -33,17 +33,21 @@ def send(steer, throttle, deadman=True):
 def run(program, seconds):
     """program(t) -> (steer -1..1, throttle -1..1). Stops the car however it ends."""
     for _ in range(3):                              # arm: the car must see the dead-man released
-        send(0, 0, deadman=False)
+        st = send(0, 0, deadman=False)
         time.sleep(1 / HZ)
+    if st.get("cal") or not st["armed"]:
+        send(0, 0, deadman=False)
+        raise RuntimeError(f"car not ready to drive (ESC calibration mode, or not armed): {st}")
     t0 = time.monotonic()
     try:
         while (t := time.monotonic() - t0) < seconds:
             st = send(*program(t))
             print(f"\r{t:5.1f}s  {st}", end="")
-            if st["src"] != "web" or not st["armed"]:
+            if st["src"] != "web" or not st["armed"] or st.get("cal"):
                 # a slow request let the failsafe fire (or the TX took over); the car disarmed
                 # and will not drive again until it sees d=0, so stop loudly instead of sending
-                # d=1 into a dead car for the rest of the program
+                # d=1 into a dead car for the rest of the program. ESC calibration mode removes
+                # every cap, so a script never drives during it.
                 raise RuntimeError(f"car left web control: {st}")
             time.sleep(1 / HZ)
     finally:

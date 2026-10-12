@@ -308,13 +308,13 @@ def steering():
     return out
 
 
-def tie_rod_half(side=1, end="horn"):
+def tie_rod_half(side=1, end="horn", p0=None, p1=None):
     """Each tie rod = two printed halves joined by a headless M3 stud (cut an M3x20) running
     in an insert in each half; turning the knuckle half 180 deg moves toe by 0.25 mm."""
     import math
     s = side
-    p0 = (SERVO_X + HORN_R, 0.0)
-    p1 = arm_tip(s)
+    p0 = p0 or (SERVO_X + HORN_R, 0.0)
+    p1 = p1 or arm_tip(s)
     L = math.dist(p0, p1)
     ang = math.degrees(math.atan2(p1[1] - p0[1], p1[0] - p0[0]))
     gap = 4.0
@@ -455,7 +455,7 @@ def hex_hub():
 def race_shim():
     """5 x 7 x 1 mm: lets a collar or hub bear on a 685's inner race only. Two go between the front
     hub collars and the outer knuckle bearings, one between the rear-left collar and its bearing."""
-    return cz(0, 0, 0, 1.0, 7.0) - cz(0, 0, -1, 2, 5.0 + 0.3 + HOLE_COMP)
+    return cz(0, 0, 0, 1.0, 6.5) - cz(0, 0, -1, 2, 5.0 + 0.3 + HOLE_COMP)   # 6.5: clear of the 685 shield
 
 
 def spring_shim(h):
@@ -602,11 +602,14 @@ def checks(ps, r):
                   for s, p in ((1, pl), (-1, pr))]
         for s, p in ((1, pl), (-1, pr)):
             a = arm_tip(s, p)
-            ln = math.dist(hxy, a)
-            ang = math.degrees(math.atan2(a[1] - hxy[1], a[0] - hxy[0]))
-            rod = Pos((hxy[0] + a[0]) / 2, (hxy[1] + a[1]) / 2, EYE_Z[s]) * Rot(0, 0, ang) * Box(ln - 9, 6, EYE_T)
-            for f in fixed + [r["servo"]] + wheels:
-                rod_gap = min(rod_gap, rod.distance_to(f))
+            other_kn = solid["knuckle_R" if s > 0 else "knuckle_L"].rotate(
+                Axis((FA_X, -s * KINGPIN_Y, 0), (0, 0, 1)), math.degrees(pr if s > 0 else pl))
+            # the real printed halves (eyes, bar, 7.6 mm joint boss) in this pose; the eyes are
+            # bolted to the horn and the post, so the eye ends are trimmed for the clearance test
+            halves = [tie_rod_half(s, e, hxy, a) for e in ("horn", "knuckle")]
+            body = (halves[0] + halves[1]) - cz(hxy[0], hxy[1], 0, 90, 9) - cz(a[0], a[1], 0, 90, 9)
+            for f in fixed + [r["servo"], other_kn] + wheels:
+                rod_gap = min(rod_gap, body.distance_to(f))
     assert rod_gap > 1.0, f"tie rod clearance at lock {rod_gap:.2f} mm"
     # suspension travel: knuckle + wheel slide on the kingpin; also bump at full lock
     travel = 99.0
@@ -623,11 +626,15 @@ def checks(ps, r):
     pod = [solid[k] for k in ("pod_floor", "pod_plate_L", "pod_plate_R_motor", "pod_brace", "spool")]
     pod += [r["motor"], r["spur"], r["wheels"]]
     pax = Axis((PIVOT_X, 0, PIVOT_Z), (0, 1, 0))
-    pod_gap = min(p.rotate(pax, a).distance_to(solid["pan_rear"]) for p in pod for a in (-4, 4))
-    assert pod_gap > 0.25, f"pod swing clearance {pod_gap:.2f} mm"     # 0.3 is the designed lug side float
+    lugs = [bx(PAN_X0, PIVOT_X + 6, *sorted((s * LUG_Y0, s * (LUG_Y0 + LUG_T))), TOP, PIVOT_Z + 6) for s in (1, -1)]
+    pan_nolug = solid["pan_rear"] - lugs[0] - lugs[1]
+    pod_gap = min(p.rotate(pax, a).distance_to(pan_nolug) for p in pod for a in (-4, 4))
+    assert pod_gap > 0.3, f"pod swing clearance {pod_gap:.2f} mm"
     import math
     drop = (PIVOT_X - RA_X) * math.sin(math.radians(4))                # pivot drop at 4 deg of pod swing
-    assert FLOOR_Z - drop > 1.0, f"pan rear touches the ground at 4 deg of pod swing ({FLOOR_Z - drop:.1f} mm)"
+    edge = drop * (FA_X - PAN_X0) / (FA_X - PIVOT_X)                   # chassis pitches about the front axle
+    assert FLOOR_Z - edge > 1.0, f"pan rear edge touches the ground at 4 deg of pod swing ({FLOOR_Z - edge:.1f} mm)"
+    assert LUG_Y0 - POD_LUG_HW >= 0.25, "pivot lugs have no side float"
     print(f"checks ok: clearances, spur/motor height, bed fit, validity, no part overlaps, "
           f"steering sweep +-{MAX_LOCK_DEG} deg min gap {worst:.1f} mm, front travel +{BUMP_MM}/-{DROOP_MM} "
           f"min gap {travel:.1f} mm, pod swing +-4 deg min gap {pod_gap:.1f} mm "
@@ -656,7 +663,7 @@ def print_pose(shape, rot):
 def calibration_coupon():
     """Print this first (PETG, same settings as the bearing parts) and measure every hole
     with the caliper. Left to right on top: 685 seat 11.2, kingpin press 3.0, kingpin slide
-    3.5, hub bore 5.35, M3 insert 4.2, M4 insert 5.6, M3 clearance 3.4. On the side face:
+    3.5, hub bore 5.35, M3 insert 4.2, M4 insert 5.6, M3 clearance 3.4, spool D-bore. On the side face:
     the same 11.2 and 3.5 bores printed horizontally (the knuckle's kingpin bore prints that way).
     Adjust HOLE_COMP until the 685 drops in with a light press."""
     holes = [11.2, 3.0, 3.5, 5.35, 4.2, 5.6, 3.4, D_BORE]

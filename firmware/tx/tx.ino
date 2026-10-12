@@ -2,9 +2,10 @@
 // Board: "ESP32 Dev Module", Arduino-ESP32 core 3.x. Power from a USB power bank.
 //
 // Wiring: steer pot wiper -> GPIO34, throttle pot wiper -> GPIO35.
-//         Each pot end goes through a 2.2k resistor to 3V3 / GND, so real travel sits at about
-//         0.50..2.80 V, inside the ADC's linear range. A reading outside MV_MIN..MV_MAX (with
-//         margin) means a broken wire, and the TX sends stop instead of full lock or throttle.
+//         Each pot: 3V3 -> 4.7k -> pot -> 2.2k -> GND, so travel sits at about 0.43..2.38 V,
+//         inside the range IDF calibrates well (0.15..2.45 V at 12 dB). A reading outside
+//         MV_MIN..MV_MAX (with margin), or a raw reading pinned at either rail, means a broken
+//         wire, and the TX sends stop instead of full lock or throttle.
 //         Dead-man tact switch GPIO27 -> GND (internal pull-up; a broken wire reads "released").
 //         LED on GPIO2.
 // The throttle pot has no return spring, so throttle is zero unless the dead-man is held,
@@ -19,8 +20,9 @@
 const int PIN_STEER = 34, PIN_THR = 35, PIN_DEADMAN = 27, PIN_LED = 2;
 // Car MAC printed by car_rx on boot. The TX will not send until this is set.
 uint8_t CAR_MAC[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-const int MV_MIN = 500, MV_MAX = 2800;   // measured knob stops (calibration knob); 2.2k end resistors, 10k pot
-const int MV_FAULT_MARGIN = 200;         // beyond the stops by this much = broken wire
+const int MV_MIN = 430, MV_MAX = 2380;   // measured knob stops (calibration knob); 4.7k top / 2.2k bottom, 10k pot
+const int MV_FAULT_MARGIN = 150;         // beyond the stops by this much = broken wire
+const int RAW_RAIL_LO = 60, RAW_RAIL_HI = 4000;   // raw ADC pinned at a rail = open GND or 3V3 lead
 const int DEADBAND = 40;                 // of 1000
 const bool INVERT_STEER = false, INVERT_THR = false;
 const uint32_t PERIOD_MS = 20;           // 50 Hz, same as the servo frame
@@ -33,7 +35,10 @@ static int readMv(int pin) {
   return s / 8;
 }
 
-static bool potFault(int mv) { return mv < MV_MIN - MV_FAULT_MARGIN || mv > MV_MAX + MV_FAULT_MARGIN; }
+static bool potFault(int pin, int mv) {
+  int raw = analogRead(pin);                   // independent of the mV calibration curve
+  return raw <= RAW_RAIL_LO || raw >= RAW_RAIL_HI || mv < MV_MIN - MV_FAULT_MARGIN || mv > MV_MAX + MV_FAULT_MARGIN;
+}
 
 static int16_t scale(int mv, int center, bool invert) {
   int span = mv >= center ? MV_MAX - center : center - MV_MIN;
@@ -85,7 +90,7 @@ void loop() {
   p.magic = WK_MAGIC;
   p.seq = seq++;
   int ms = readMv(PIN_STEER), mt = readMv(PIN_THR);
-  bool fault = potFault(ms) || potFault(mt);
+  bool fault = potFault(PIN_STEER, ms) || potFault(PIN_THR, mt);
   p.steer = fault ? 0 : scale(ms, centerSteer, INVERT_STEER);
   bool held = !fault && digitalRead(PIN_DEADMAN) == LOW;
   p.throttle = held ? scale(mt, centerThr, INVERT_THR) : 0;

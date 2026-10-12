@@ -24,6 +24,9 @@
 #include <esp_now.h>
 #include <esp_wifi.h>
 #include <esp_task_wdt.h>
+#include <esp_rom_gpio.h>
+#include <soc/gpio_sig_map.h>
+#include <soc/gpio_struct.h>
 #include <WebServer.h>
 #include <Preferences.h>
 #include <ArduinoOTA.h>
@@ -45,7 +48,8 @@ const float LIMP_THROTTLE = 0.3f;
 const uint32_t ARM_MS = 3000;
 const uint32_t OTA_IDLE_MS = 5000; // OTA only after this long with no valid command
 const uint32_t PARKED_MS = 3000;   // settings/OTA/calibration only after this long at neutral (no wheel sensor)
-const uint32_t ESC_CAL_MS = 60000; // ESC calibration window: full range, no caps, no slew
+const uint32_t ESC_CAL_MS = 30000; // ESC calibration window: full range, no caps; phone only
+const uint32_t WDT_DRIVE_MS = 300, WDT_FLASH_MS = 5000;   // flash erases starve core 1; car is parked then
 
 struct Cmd { float steer, thr; bool deadman; uint32_t ms; };
 static Cmd txCmd = {0, 0, false, 0}, webCmd = {0, 0, false, 0};
@@ -66,6 +70,19 @@ static Status st = {1500, 1500, WK_SRC_NONE, false, false, false, false, NAN, 0,
 static volatile uint32_t badPackets = 0;
 
 static uint32_t usToDuty(int us) { return (uint32_t)us * 65535UL / 20000UL; }  // 16-bit at 50 Hz
+
+// Runs inside the task-watchdog ISR when controlTask has stalled, before the panic handler
+// spends time writing a core dump. Detach GPIO19 from LEDC and hold it low: the ESC sees
+// no pulses and goes to its own signal-loss failsafe instead of holding the last throttle.
+extern "C" void IRAM_ATTR esp_task_wdt_isr_user_handler(void) {
+  esp_rom_gpio_connect_out_signal(PIN_ESC, SIG_GPIO_OUT_IDX, false, false);
+  GPIO.out_w1tc = (1UL << PIN_ESC);
+}
+
+static bool setWdt(uint32_t ms) {
+  esp_task_wdt_config_t c = {ms, 0, true};      // subscribed tasks only, panic -> reset
+  return esp_task_wdt_reconfigure(&c) == ESP_OK;
+}
 
 static bool macBound() {
   for (int i = 0; i < 6; i++) if (TX_MAC[i]) return true;
@@ -100,7 +117,8 @@ void onRecv(const esp_now_recv_info_t *info, const uint8_t *data, int len) {
 
 // ---------------------------------------------------------------- control task
 static void controlTask(void *) {
-  esp_task_wdt_add(NULL);                       // hang > 300 ms resets the chip (setup reconfigures the WDT)
+  if (esp_task_wdt_add(NULL) != ESP_OK)          // hang > 300 ms cuts the ESC signal and resets the chip
+    Serial.println("WARNING: control task not on the watchdog");
   WkGate gate = {WK_SRC_NONE, false};
   float slewed = 0, vbat = NAN;
   uint32_t lowSince = 0;
@@ -128,23 +146,30 @@ static void controlTask(void *) {
     last = now;
 
     bool txLive = tx.ms && wk_age(now, tx.ms) < c.failsafeMs;
-    bool webLive = web.ms && wk_age(now, web.ms) < c.failsafeMs && (int32_t)(web.ms - tx.ms) > 0;
+    bool webLive = web.ms && wk_age(now, web.ms) < c.failsafeMs && (!tx.ms || (int32_t)(web.ms - tx.ms) > 0);
     uint8_t src = otaActive ? WK_SRC_NONE : txLive ? WK_SRC_TX : (webLive ? WK_SRC_WEB : WK_SRC_NONE);
     // ESC calibration: the ESC must see the true end points, or it learns the caps as 100%.
-    bool cal = calEnd && (int32_t)(calEnd - now) > 0;
-    if (cal) { c.maxThrottle = 1.0f; c.escFwdMax = 2000; c.escRevMax = 1000; c.throttleSlew = 50.0f; }
+    bool cal = calEnd && (int32_t)(calEnd - now) > 0 && src == WK_SRC_WEB;
+    if (calEnd && !cal) {                         // expired, or the phone lost control: cancel for good
+      portENTER_CRITICAL(&mux);
+      calUntil = 0;
+      portEXIT_CRITICAL(&mux);
+    }
+    if (cal) { c.maxThrottle = 1.0f; c.escFwdMax = 2000; c.escRevMax = 1000; }   // ESC learns true end points
     const Cmd &cmd = src == WK_SRC_TX ? tx : web;
     bool linkOk = src != WK_SRC_NONE;
 
     float cap = (limp && !cal) ? fminf(c.maxThrottle, LIMP_THROTTLE) : c.maxThrottle;
-    float want = wk_gate(gate, src, linkOk, linkOk && cmd.deadman, linkOk ? cmd.thr : 0);
+    float thrIn = linkOk ? cmd.thr : 0;
+    if (cal && fabsf(thrIn) >= 0.9f) thrIn = thrIn > 0 ? 1.0f : -1.0f;   // a finger rarely hits the pad edge
+    float want = wk_gate(gate, src, linkOk, linkOk && cmd.deadman, thrIn);
     if (want > 0) want *= cap;
     slewed = wk_slew(slewed, want, c.throttleSlew, dt);
     int steerUs = wk_steer_us(c, linkOk ? cmd.steer : 0);
     int escUs = wk_esc_us(c, bootNeutral, slewed);
     ledcWrite(PIN_STEER, usToDuty(steerUs));
     ledcWrite(PIN_ESC, usToDuty(escUs));
-    digitalWrite(PIN_LED, linkOk ? (gate.armed ? HIGH : now / 500 % 2) : now / 150 % 2);
+    digitalWrite(PIN_LED, cal ? (now / 60 % 4 == 0) : linkOk ? (gate.armed ? HIGH : now / 500 % 2) : now / 150 % 2);
 
     portENTER_CRITICAL(&mux);
     bool moving = slewed != 0 || (linkOk && cmd.deadman);
@@ -181,9 +206,11 @@ static void loadCfg() {
 
 static bool saveCfg(const WkCfg &c) {
   if (!wk_cfg_valid(c)) return false;
+  setWdt(WDT_FLASH_MS);                         // a sector erase can take hundreds of ms; car is parked
   prefs.begin("wk10", false);
   bool ok = prefs.putBytes("cfg", &c, sizeof c) == sizeof c;
   prefs.end();
+  setWdt(WDT_DRIVE_MS);
   if (ok) {
     portENTER_CRITICAL(&mux);
     cfg = c;
@@ -204,7 +231,7 @@ button{font-size:16px;min-height:44px;padding:0 16px;margin:4px}#st{font-family:
 <div id="st" aria-live="polite">connecting</div>
 <details><summary>Tuning (saved to the car; only while stopped)</summary><form id="f"></form>
 <button id="save">Save</button><button id="def">Defaults</button>
-<p>ESC calibration: wheels off the ground, then press, then follow the ESC manual within 60 s.</p><button id="cal">ESC calibration mode (60 s)</button></details>
+<p>ESC calibration: wheels off the ground, ESC already in its setup mode, then press and follow the ESC manual within 30 s.</p><button id="cal">ESC calibration mode (30 s)</button><button id="calend">End calibration</button><div id="msg" aria-live="polite"></div></details>
 <script>
 const F=["steerCenter","steerLeft","steerRight","steerReverse","escNeutral","escFwdMax","escRevMax","throttleSlew","steerExpo","maxThrottle","failsafeMs"];
 let s=0,t=0,held=0,n=Date.now()%2000000000;const pad=document.getElementById('pad'),dot=document.getElementById('dot');
@@ -219,9 +246,11 @@ catch(e){document.getElementById('st').textContent='no link'}setTimeout(tick,50)
 async function load(){const c=await (await fetch('/cfg')).json();document.getElementById('f').innerHTML=F.map(k=>
 `<label>${k}<input name="${k}" value="${c[k]}" inputmode="decimal"></label>`).join('')}load();
 document.getElementById('save').onclick=async()=>{const q=new URLSearchParams(new FormData(document.getElementById('f')));
-const r=await fetch('/cfg?'+q,{method:'POST'});alert(r.ok?'saved (escNeutral applies after a reboot)':'rejected: '+await r.text());load()};
-document.getElementById('cal').onclick=async()=>{const r=await fetch('/esc_cal',{method:'POST'});alert(r.ok?'calibration mode on for 60 s: full range, no caps':await r.text())};
-document.getElementById('def').onclick=async()=>{const r=await fetch('/cfg/defaults',{method:'POST'});if(!r.ok)alert(await r.text());load()};
+const r=await fetch('/cfg?'+q,{method:'POST'});say(r.ok?'saved (escNeutral applies after a reboot)':'rejected: '+await r.text());load()};
+const say=m=>document.getElementById('msg').textContent=m;
+document.getElementById('cal').onclick=async()=>{const r=await fetch('/esc_cal',{method:'POST'});say(r.ok?'calibration mode on for 30 s: full range, no caps':await r.text())};
+document.getElementById('calend').onclick=async()=>{await fetch('/esc_cal/end',{method:'POST'});say('calibration ended')};
+document.getElementById('def').onclick=async()=>{const r=await fetch('/cfg/defaults',{method:'POST'});say(r.ok?'defaults restored':await r.text());load()};
 </script></html>)HTML";
 
 static bool argInt(const char *k, long lo, long hi, long &out) {
@@ -288,7 +317,7 @@ static void handleCfgGet() {
 }
 
 static void handleCfgPost() {
-  if (!parked()) { server.send(409, "text/plain", "stop the car first (no throttle, dead-man released, 1 s)"); return; }
+  if (!parked()) { server.send(409, "text/plain", "stop the car first (no throttle, dead-man released, 3 s)"); return; }
   WkCfg c = cfg;
   long v;
   float f;
@@ -352,8 +381,15 @@ void setup() {
     server.on("/cfg", HTTP_POST, handleCfgPost);
     server.on("/esc_cal", HTTP_POST, [] {
       if (!parked()) { server.send(409, "text/plain", "stop the car first"); return; }
+      if (status().src != WK_SRC_WEB) { server.send(409, "text/plain", "only while this phone is driving"); return; }
       portENTER_CRITICAL(&mux);
       calUntil = millis() + ESC_CAL_MS;
+      portEXIT_CRITICAL(&mux);
+      server.send(200, "text/plain", "ok");
+    });
+    server.on("/esc_cal/end", HTTP_POST, [] {
+      portENTER_CRITICAL(&mux);
+      calUntil = 0;
       portEXIT_CRITICAL(&mux);
       server.send(200, "text/plain", "ok");
     });
@@ -365,8 +401,8 @@ void setup() {
     server.begin();
     ArduinoOTA.setHostname(ssid);
     ArduinoOTA.setPassword(AP_PASS);
-    ArduinoOTA.onStart([] { otaActive = true; });   // control task forces neutral and ignores commands
-    ArduinoOTA.onError([](ota_error_t) { otaActive = false; });
+    ArduinoOTA.onStart([] { otaActive = true; setWdt(WDT_FLASH_MS); });   // neutral forced; erases may starve core 1
+    ArduinoOTA.onError([](ota_error_t) { otaActive = false; setWdt(WDT_DRIVE_MS); });
     ArduinoOTA.begin();
     Serial.printf("Wi-Fi %s up, open http://192.168.4.1\n", ssid);
   } else {
@@ -380,8 +416,7 @@ void setup() {
 
   uint32_t t0 = millis();                       // ESC arming window: neutral only
   while (millis() - t0 < ARM_MS) { digitalWrite(PIN_LED, millis() / 500 % 2); delay(10); }
-  esp_task_wdt_config_t wdt = {300, 0, true};   // 300 ms, subscribed tasks only, panic -> reset
-  esp_task_wdt_reconfigure(&wdt);
+  if (!setWdt(WDT_DRIVE_MS)) park(200, "watchdog reconfigure failed: car parked at neutral");
   xTaskCreatePinnedToCore(controlTask, "control", 4096, nullptr, 10, nullptr, 1);
 }
 

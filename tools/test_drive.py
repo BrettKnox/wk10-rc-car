@@ -2,7 +2,8 @@
     python C:/Users/bman0/Code/rc-car/tools/test_drive.py
 1. run() arms (d=0) before it sends any throttle,
 2. it always ends with d=0 stop commands,
-3. if the car reports it left web control mid-run, run() raises instead of carrying on.
+3. if the car reports it left web control mid-run, run() raises instead of carrying on,
+4. it refuses to drive while the car is in ESC calibration mode (no caps).
 Does NOT test: real Wi-Fi latency, the car firmware, or the failsafe timing itself.
 """
 import json
@@ -14,6 +15,7 @@ import drive
 
 log = []
 drop_after = None          # after this many requests the fake car reports failsafe
+cal = False                # fake car reports ESC calibration mode
 
 
 class Car(BaseHTTPRequestHandler):
@@ -21,7 +23,7 @@ class Car(BaseHTTPRequestHandler):
         q = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
         log.append((int(q["t"]), int(q["d"]), int(q["n"])))
         lost = drop_after is not None and len(log) > drop_after
-        body = json.dumps({"src": "failsafe" if lost else "web", "armed": not lost}).encode()
+        body = json.dumps({"src": "failsafe" if lost else "web", "armed": not lost, "cal": cal}).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
@@ -49,5 +51,16 @@ try:
 except RuntimeError:
     pass
 assert log[-1][:2] == (0, 0), "must stop after an abort"
+
+log.clear()
+drop_after = None
+cal = True
+try:
+    drive.run(lambda t: (0.0, 0.5), 5)
+    raise AssertionError("should refuse to drive in calibration mode")
+except RuntimeError:
+    pass
+assert not any(d == 1 for _, d, _ in log), "sent a drive command during calibration"
+assert log[-1][:2] == (0, 0), "must stop after a calibration abort"
 srv.shutdown()
 print("test_drive: pass")
