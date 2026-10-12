@@ -4,3 +4,4 @@ cad/out/*.stl
 __pycache__/
 build/
 .venv/
+cad/out/print/
