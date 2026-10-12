@@ -93,31 +93,33 @@ Not needed any more: ball links and turnbuckles (printed tie rods), the Hobbypar
 
 ## Printed parts
 
-STEP and STL for every part are in `cad/out/` (STLs are regenerated, not committed). They export in assembly pose; rotate in the slicer per this table. Regenerate everything and re-run the fit checks with:
+`cad/out/print/` holds a print-ready STL for every part, already rotated into its slicer orientation and sitting on Z=0, plus `calibration_coupon.stl`. `cad/out/` holds the same parts in assembly pose as STEP and STL, and `wk10_assembly.step` is the whole car. STLs are regenerated, not committed. Regenerate everything and re-run the fit checks with:
 
 ```bash
 C:/Users/bman0/Code/OpsBrain/.venv/Scripts/python.exe C:/Users/bman0/Code/rc-car/cad/wk10.py
 ```
 
-| Part | Qty | Material | Orientation and settings |
-|---|---|---|---|
-| pan_rear, pan_front | 1 each | PLA | Flat, 5 walls, 40% gyroid. Rails up. |
-| splice_servo_block | 1 | PLA | Flat, servo posts up |
-| front_end | 1 | PETG or PLA | Base down, 6 walls. Checked printable with no support. |
-| upper_arm_L, upper_arm_R | 1 each | PLA | Flat |
-| knuckle_L, knuckle_R | 1 each | PETG | Axle bore vertical, 100% infill, tree supports from the bed under the steering arm and the web |
-| tie_rod_L/R_horn, tie_rod_L/R_knuckle | 1 each | PETG | Flat, 100% infill |
-| pod_plate_L, pod_plate_R_motor | 1 each | PETG | Flat, 100% infill (the motor plate takes the heat) |
-| pod_floor | 1 | PETG | Flat |
-| pod_brace | 1 | PLA | Flat |
-| spool | 1 | PETG | Flange down, 100% infill |
-| spur_clamp | 1 | PETG | Flat, nut pockets up |
-| hex_hub_x4 | 4 | PETG | Collar down, 100% infill |
-| bump_stops | 2 | PETG | Upright |
-| esp32_tray | 1 | PLA | Flat |
+Print the calibration coupon first (PETG, same settings as the bearing parts). Measure every hole with the Kynup caliper. The hole compensation in `wk10.py` (`HOLE_COMP = 0.2`) is an assumed default, not this printer. Change that one knob until a 685ZZ drops into the 11.2 mm hole with a light press, then re-run. Layer height 0.2 mm for everything.
 
-Before printing the bearing parts, print a bore coupon and measure it with the Kynup caliper. Every hole compensation in `wk10.py` (`HOLE_COMP = 0.2`) is an assumed default, not this printer. Change that one knob and re-run.
+Every part below was run through the printability analyser in its print orientation (2026-10-12). "Support" lists the only places that need it.
 
+| Part | Qty | Material | Settings | Support |
+|---|---|---|---|---|
+| calibration_coupon | 1 | PETG | 100% infill | none |
+| pan_rear, pan_front | 1 each | PLA | 5 walls, 40% gyroid | pan_rear: under the rear spring arm only |
+| splice_servo_block | 1 | PLA | 5 walls | none |
+| front_end | 1 | PETG or PLA | 6 walls | none |
+| upper_arm_L, upper_arm_R | 1 each | PLA | 5 walls | none |
+| knuckle_L, knuckle_R | 1 each | PETG | 100% infill | tree supports from the bed under the steering arm and the web |
+| tie_rod_L/R_horn, tie_rod_L/R_knuckle | 1 each | PETG | 100% infill | none |
+| pod_plate_L, pod_plate_R_motor | 1 each | PETG | 100% infill (the motor plate takes the heat) | none |
+| pod_floor | 1 | PETG | 5 walls, 40% | under the pivot lug only |
+| pod_brace | 1 | PLA | 5 walls | none |
+| spool | 1 | PETG | 100% infill | none |
+| spur_clamp | 1 | PETG | 100% infill | none |
+| hex_hub_x4 | 4 | PETG | 100% infill | none |
+| bump_stops | 2 | PETG | 100% infill | none |
+| esp32_tray | 1 | PLA | 3 walls | none |
 ## Assembly order
 
 1. Heat-set every insert first (Hakko at about 210 C), square to the face.
@@ -131,7 +133,7 @@ Before printing the bearing parts, print a bore coupon and measure it with the K
 9. Pod: stand the plates on the floor against the floor rails and bolt them sideways into the rail inserts (3 M3 on the left plate, 2 on the motor plate). Brace between the plates (2 M3 sideways). Motor on the right plate through the slots, 14T pinion on the motor shaft.
 10. Spur: drill its centre to 12.2 mm. Tape `spur_clamp` to it as a template and drill the three holes at 3.2 mm. Sandwich spur between the spool flange and the clamp ring with three M3x12 bolts and nuts.
 11. Rear axle: grind one 0.5 mm deep flat along the 211 mm rod where the spool sits (about 20 mm long) and short flats where the two hubs land. Slide it through the left bearing, the right bearing and the spool (the spool's D-bore keys on the flat). Shaft collars: one outboard of the left plate, one outboard of the spool, pushed together so the axle has no end float. Set mesh with a strip of paper between the gears, tighten the motor screws.
-12. Hang the pod on the pan with the two M4 shoulder bolts into the pod's M4 inserts (0.6 mm of float each side, so it never clamps). M3x35 down through the pan's spring arm, spring, into the pod-floor insert. Set it so the pod sits level at ride height.
+12. Hang the pod on the pan with the two M4 shoulder bolts into the pod's M4 inserts (0.6 mm of float each side, so it never clamps). M3x35 with two washers under the head down through the pan's spring arm, spring, into the pod-floor insert (the washers keep the tip off the bottom of the insert hole). Set it so the pod sits level at ride height.
 13. Battery in the left bay with the strap through the slots. ESC and ESP32 tray zip-tied on the right.
 
 ## Wiring

@@ -28,7 +28,7 @@
  },
  "front_end": {
   "print": "PETG or PLA, base down, 6 walls",
-  "volume_cm3": 78.3,
+  "volume_cm3": 80.8,
   "bbox_mm": [
    54.0,
    126.0,
@@ -91,7 +91,7 @@
  },
  "pod_floor": {
   "print": "PETG, flat",
-  "volume_cm3": 42.6,
+  "volume_cm3": 42.7,
   "bbox_mm": [
    103.2,
    100.0,
@@ -109,10 +109,10 @@
  },
  "spool": {
   "print": "PETG, flange down, 100% infill",
-  "volume_cm3": 3.1,
+  "volume_cm3": 2.9,
   "bbox_mm": [
    30.0,
-   16.0,
+   14.0,
    30.0
   ]
  },
@@ -136,7 +136,7 @@
  },
  "tie_rod_L_horn": {
   "print": "PETG, flat, 100% infill",
-  "volume_cm3": 0.7,
+  "volume_cm3": 0.8,
   "bbox_mm": [
    15.4,
    33.9,
@@ -145,7 +145,7 @@
  },
  "tie_rod_L_knuckle": {
   "print": "PETG, flat, 100% infill",
-  "volume_cm3": 0.7,
+  "volume_cm3": 0.8,
   "bbox_mm": [
    15.4,
    33.9,
@@ -154,7 +154,7 @@
  },
  "tie_rod_R_horn": {
   "print": "PETG, flat, 100% infill",
-  "volume_cm3": 0.7,
+  "volume_cm3": 0.8,
   "bbox_mm": [
    15.4,
    33.9,
@@ -163,7 +163,7 @@
  },
  "tie_rod_R_knuckle": {
   "print": "PETG, flat, 100% infill",
-  "volume_cm3": 0.7,
+  "volume_cm3": 0.8,
   "bbox_mm": [
    15.4,
    33.9,

@@ -1,4 +1,4 @@
-﻿"""WK-10: printable 1/10 on-road pan car built around parts already on the shelf.
+"""WK-10: printable 1/10 on-road pan car built around parts already on the shelf.
 
 Run:  C:/Users/bman0/Code/OpsBrain/.venv/Scripts/python.exe C:/Users/bman0/Code/rc-car/cad/wk10.py
 Writes every printable part (assembly pose; README gives the print orientation) to cad/out/*.stl + *.step and the
@@ -173,7 +173,7 @@ def splice_servo_block():
 # ---------------------------------------------------------------- front end
 def front_end():
     """Base + centre tower + both lower arms, one print, kingpins pressed in."""
-    f = bx(104, 150, -40, 40, TOP, TOP + 7)                          # 7 mm: the 6.3 mm inserts stay inside
+    f = bx(104, 150, -40, 40, TOP, TOP + 8)                          # 8 mm: 6.3 mm inserts leave a 1.7 mm cap
     f += bx(FA_X - 9, FA_X + 9, -30, 30, TOP, UPPER_Z[0])          # tower
     for s in (1, -1):
         y0, y1 = sorted((s * 30, s * (KINGPIN_Y + 7)))
@@ -314,9 +314,9 @@ def tie_rod_half(side=1, end="horn"):
     half = L / 2 - gap / 2
     eye = cz(0, 0, -EYE_T / 2, EYE_T / 2, 8.0) - cz(0, 0, -2, 2, 3.6)   # loose: tilts with bump
     bar = bx(3.5, half - 4, -3, 3, -EYE_T / 2, EYE_T / 2)
-    boss = cx(0, 0, half - 8, half, 7.6)
+    boss = bx(half - 8, half, -3.8, 3.8, -EYE_T / 2, -EYE_T / 2 + 7.6)   # flat bottom: prints without support
     h = eye + bar + boss
-    h -= cx(0, 0, half - M3_INS_DEPTH, half + 0.01, M3_INS)
+    h -= cx(0, -EYE_T / 2 + 3.8, half - M3_INS_DEPTH, half + 0.01, M3_INS)
     h = h.rotate(Axis.Z, ang if end == "horn" else ang + 180)
     x, y = p0 if end == "horn" else p1
     return Pos(x, y, EYE_Z[s]) * h
@@ -368,8 +368,8 @@ def pod_floor():
         y0, y1 = sorted((s * 13.7, s * 6.0))
         f -= cy(PIVOT_X, PIVOT_Z, y0, y1, 5.6)                        # M4 insert pilot
     # spring seat under the pan's spring arm + insert for the M3x35 spring bolt
-    f += cz(SPRING_X, SPRING_Y, 12, 15, 10)
-    f -= insert(SPRING_X, SPRING_Y, 15)
+    f += cz(SPRING_X, SPRING_Y, 12, 16, 10)                                    # 8 mm under a 6.3 mm insert
+    f -= insert(SPRING_X, SPRING_Y, 16)
     # rear top brace ties the two plates so the pod does not lozenge
     return f
 
@@ -405,7 +405,7 @@ def spool():
     bearing's inner race and a shaft collar outboard holds it there."""
     y_hub = SPUR_FACE + SPUR_W + CLAMP_T                             # hub end under the clamp ring
     y_tip = -POD_PLATE_Y - POD_T                                     # right bearing's outer face
-    y_out = SPUR_FACE - 5.0
+    y_out = SPUR_FACE - 3.0                                          # flush with the flange: prints flange-down
     s = cy(RA_X, AXLE_Z, y_out, y_hub, 12)
     s += cy(RA_X, AXLE_Z, y_hub, y_tip, 7)                            # touches the inner race only
     s += cy(RA_X, AXLE_Z, SPUR_FACE - 3, SPUR_FACE, 30)               # flange
@@ -483,7 +483,7 @@ def refs():
     r["rear_axle"] = (cy(RA_X, AXLE_Z, -TRACK / 2 - 18, TRACK / 2 + 18, 5) -
                       bx(RA_X - 3, RA_X + 3, -TRACK / 2 - 19, TRACK / 2 + 19, AXLE_Z + AXLE_FLAT, AXLE_Z + 3))
     # 5 mm shaft collars: left outboard of the left plate, right outboard of the spool
-    y_sp = SPUR_FACE - 5.0
+    y_sp = SPUR_FACE - 3.0
     collar = lambda y0, y1: cy(RA_X, AXLE_Z, y0, y1, 10) - cy(RA_X, AXLE_Z, y0 - 1, y1 + 1, 5.05)
     r["collars"] = Compound([collar(POD_PLATE_Y + POD_T + 0.5, POD_PLATE_Y + POD_T + 5.5), collar(y_sp - 5, y_sp)])
     r["kingpins"] = Compound([cz(FA_X, s * KINGPIN_Y, KP_Z0, KP_Z1, 3) for s in (1, -1)])
@@ -593,8 +593,49 @@ def checks(ps, r):
           f"(NOT tested: real rim hex depth/offset, tie rods swept with the knuckles, spring solid height)")
 
 
+# rotation (deg about X, then Y, then Z) that puts each part in its slicer orientation
+PRINT_ROT = {
+    "knuckle_L": (90, 0, 0), "knuckle_R": (-90, 0, 0),             # axle bore vertical, housing end down
+    "pod_plate_L": (90, 0, 0), "pod_plate_R_motor": (-90, 0, 0),   # lay the plates flat
+    "spool": (90, 0, 0),                                           # flange face down
+    "spur_clamp": (90, 0, 0),                                      # nut pockets up
+}
+
+
+def print_pose(shape, rot):
+    s = shape
+    for ax, a in zip((Axis.X, Axis.Y, Axis.Z), rot):
+        if a:
+            s = s.rotate(ax, a)
+    bb = s.bounding_box()
+    return Pos(-bb.center().X, -bb.center().Y, -bb.min.Z) * s
+
+
+def calibration_coupon():
+    """Print this first (PETG, same settings as the bearing parts) and measure every hole
+    with the caliper. Left to right on top: 685 seat 11.2, kingpin press 3.0, kingpin slide
+    3.5, hub bore 5.35, M3 insert 4.2, M4 insert 5.6, M3 clearance 3.4. On the side face:
+    the same 11.2 and 3.5 bores printed horizontally (the knuckle's kingpin bore prints that way).
+    Adjust HOLE_COMP until the 685 drops in with a light press."""
+    holes = [11.2, 3.0, 3.5, 5.35, 4.2, 5.6, 3.4]
+    xs, x = [], 4.0
+    for d in holes:
+        x += d / 2 + 3
+        xs.append(x)
+        x += d / 2
+    w = x + 4
+    c = bx(0, w, 0, 18, 0, 8)
+    for xc, d in zip(xs, holes):
+        c -= cz(xc, 9, -1, 9, d)
+    c += bx(0, 30, 18, 32, 0, 16)                                    # side block for horizontal bores
+    c -= cy(9, 8, 17, 33, 11.2)
+    c -= cy(23, 8, 17, 33, 3.5)
+    return c
+
+
 if __name__ == "__main__":
     OUT.mkdir(exist_ok=True)
+    (OUT / "print").mkdir(exist_ok=True)
     ps, r = parts(), refs()
     checks(ps, r)
     import json
@@ -602,9 +643,16 @@ if __name__ == "__main__":
     for name, (shape, note) in ps.items():
         export_stl(shape, str(OUT / f"{name}.stl"))
         export_step(shape, str(OUT / f"{name}.step"))
+        pp = print_pose(shape, PRINT_ROT.get(name, (0, 0, 0)))
+        assert pp.bounding_box().size.X <= 215 and pp.bounding_box().size.Y <= 215, f"{name} print pose off the bed"
+        export_stl(pp, str(OUT / "print" / f"{name}.stl"))
+        export_step(pp, str(OUT / "print" / f"{name}.step"))
         bb = shape.bounding_box().size
         manifest[name] = {"print": note, "volume_cm3": round(shape.volume / 1000, 1),
                           "bbox_mm": [round(bb.X, 1), round(bb.Y, 1), round(bb.Z, 1)]}
+    coupon = calibration_coupon()
+    export_stl(coupon, str(OUT / "print" / "calibration_coupon.stl"))
+    export_step(coupon, str(OUT / "print" / "calibration_coupon.step"))
     asm = Compound([s for k, (s, _) in ps.items() if "_x" not in k] + list(r.values()))  # loose small parts left out
     export_step(asm, str(OUT / "wk10_assembly.step"))
     (OUT / "manifest.json").write_text(json.dumps(manifest, indent=1))
