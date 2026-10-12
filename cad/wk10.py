@@ -281,7 +281,7 @@ def steering():
         ta = math.degrees(math.acos(abs(u[0] * w[0] + u[1] * w[1]) / (math.hypot(*u) * math.hypot(*w))))
         return p, ta
 
-    out = {}
+    out = {"_lock_poses": []}                    # (horn xy, left wheel rad, right wheel rad) at each lock
     for sign in (1, -1):                         # both servo directions
         lock, d = math.radians(MAX_LOCK_DEG), 0.0
         while True:
@@ -294,6 +294,7 @@ def steering():
             inner, outer = (abs(pl), abs(pr)) if left_turn else (abs(pr), abs(pl))
             if inner >= lock or d > 70:
                 break
+        out["_lock_poses"].append((horn(t), pl, pr))
         ideal = math.atan(1 / (1 / math.tan(inner) + 2 * KINGPIN_Y / WB))
         out["left" if left_turn else "right"] = {
             "servo_deg": round(d, 1), "inner_deg": round(math.degrees(inner), 1),
@@ -562,6 +563,7 @@ def checks(ps, r):
         assert bb[1] <= 215 and bb[2] <= 245, f"{k} does not fit a 220x220x250 bed {bb}"
         assert s.is_valid, f"{k} invalid solid"
     st = steering()
+    poses = st.pop("_lock_poses")
     for turn in ("left", "right"):
         assert turn in st, f"never reached {turn} lock {st}"
         assert 70 <= st[turn]["ackermann_pct"] <= 130, f"Ackermann {st}"
@@ -592,6 +594,20 @@ def checks(ps, r):
                 for f in fixed:
                     worst = min(worst, m.distance_to(f))
     assert worst > 0.8, f"steering sweep clearance {worst:.2f} mm at <= {MAX_LOCK_DEG} deg"
+    # tie rods at both locks: rod body (eyes trimmed off) vs chassis, servo and both turned wheels
+    import math
+    rod_gap = 99.0
+    for hxy, pl, pr in poses:
+        wheels = [wheel(FA_X, s * TRACK / 2).rotate(Axis((FA_X, s * KINGPIN_Y, 0), (0, 0, 1)), math.degrees(p))
+                  for s, p in ((1, pl), (-1, pr))]
+        for s, p in ((1, pl), (-1, pr)):
+            a = arm_tip(s, p)
+            ln = math.dist(hxy, a)
+            ang = math.degrees(math.atan2(a[1] - hxy[1], a[0] - hxy[0]))
+            rod = Pos((hxy[0] + a[0]) / 2, (hxy[1] + a[1]) / 2, EYE_Z[s]) * Rot(0, 0, ang) * Box(ln - 9, 6, EYE_T)
+            for f in fixed + [r["servo"]] + wheels:
+                rod_gap = min(rod_gap, rod.distance_to(f))
+    assert rod_gap > 1.0, f"tie rod clearance at lock {rod_gap:.2f} mm"
     # suspension travel: knuckle + wheel slide on the kingpin; also bump at full lock
     travel = 99.0
     for s, kn in ((1, "knuckle_L"), (-1, "knuckle_R")):
@@ -615,8 +631,8 @@ def checks(ps, r):
     print(f"checks ok: clearances, spur/motor height, bed fit, validity, no part overlaps, "
           f"steering sweep +-{MAX_LOCK_DEG} deg min gap {worst:.1f} mm, front travel +{BUMP_MM}/-{DROOP_MM} "
           f"min gap {travel:.1f} mm, pod swing +-4 deg min gap {pod_gap:.1f} mm "
-          f"steering {st} "
-          f"(NOT tested: real rim hex depth/offset, tie rods swept with the knuckles, spring solid height)")
+          f"tie rods at lock min gap {rod_gap:.1f} mm, steering {st} "
+          f"(NOT tested: real rim hex depth/offset, spring solid height, tie rods during bump)")
 
 
 # rotation (deg about X, then Y, then Z) that puts each part in its slicer orientation
