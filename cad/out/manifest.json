@@ -73,27 +73,27 @@
  },
  "pod_plate_L": {
   "print": "PETG, flat, 100% infill",
-  "volume_cm3": 10.1,
+  "volume_cm3": 10.0,
   "bbox_mm": [
-   65.3,
+   64.7,
    5.0,
    40.0
   ]
  },
  "pod_plate_R_motor": {
   "print": "PETG, flat, 100% infill (motor heat)",
-  "volume_cm3": 11.5,
+  "volume_cm3": 11.4,
   "bbox_mm": [
-   65.3,
+   64.7,
    5.0,
    40.0
   ]
  },
  "pod_floor": {
   "print": "PETG, flat",
-  "volume_cm3": 37.4,
+  "volume_cm3": 37.1,
   "bbox_mm": [
-   103.8,
+   103.2,
    100.0,
    14.0
   ]
@@ -109,10 +109,19 @@
  },
  "spool": {
   "print": "PETG, flange down, 100% infill",
-  "volume_cm3": 3.3,
+  "volume_cm3": 3.2,
   "bbox_mm": [
    30.0,
-   18.0,
+   17.5,
+   30.0
+  ]
+ },
+ "spur_clamp": {
+  "print": "PETG, flat, nut pockets up",
+  "volume_cm3": 1.8,
+  "bbox_mm": [
+   30.0,
+   3.5,
    30.0
   ]
  },

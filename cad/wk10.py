@@ -38,7 +38,7 @@ M3_CLR, M3_INS, M3_INS_DEPTH = 3.4, 4.2, 6.3
 M4_SHOULDER = 5.0 + 0.15 + HOLE_COMP  # uxcell shoulder bolt is 5 mm, not 4
 
 # drivetrain: 48P pinion/spur, 540 can motor
-PINION_T, SPUR_T, DP = 16, 87, 48.0
+PINION_T, SPUR_T, DP = 14, 87, 48.0   # 14T for the 3600Kv QR3650: 6.21:1, slots fit 13-17T
 CENTRE = (PINION_T + SPUR_T) / DP / 2 * 25.4      # 27.25 mm
 SPUR_D = SPUR_T / DP * 25.4                        # 46.0 mm
 MOTOR_D, MOTOR_L, MOTOR_HOLE_SPC = 36.0, 53.0, 25.0  # 3650 can (QR3650 36x52.8); 540 std M3 @ 25, MEASURE yours
@@ -352,21 +352,43 @@ def pod_brace():
     return b
 
 
+SPUR_W = 6.0                        # VERIFY: thickness of the spur you buy at the hub
+SPUR_FACE = -POD_PLATE_Y - POD_T - 11.0  # outboard face of the spur, against the flange
+CLAMP_T = 3.5
+
+
+def _bolt_circle(r=10.0, n=3):
+    import math
+    return [(RA_X + r * math.cos(math.radians(a)), AXLE_Z + r * math.sin(math.radians(a)))
+            for a in range(0, 360, 360 // n)]
+
+
 def spool():
-    """Locked rear hub: spur bolts to the flange, M3 pinch bolt grips the 5 mm D-shaft."""
-    y0, y1 = -POD_PLATE_Y - POD_T - 1.0, -POD_PLATE_Y - POD_T - 19.0
-    fl = -POD_PLATE_Y - POD_T - 10.0                                 # spur seats inboard of this face
-    s = cy(RA_X, AXLE_Z, y1, y0, 12)
-    s += cy(RA_X, AXLE_Z, fl - 3, fl, 30)                            # flange
-    s -= cy(RA_X, AXLE_Z, y1 - 1, y0 + 1, 5.2)
-    for a in range(0, 360, 120):                                     # spur bolt circle
-        import math
-        r = 10.0
-        s -= cy(RA_X + r * math.cos(math.radians(a)), AXLE_Z + r * math.sin(math.radians(a)),
-                fl - 4, fl + 1, M3_CLR)
-    s -= cx(y1 + 3, AXLE_Z, RA_X - 7, RA_X + 7, M3_CLR)              # cross pinch bolt, outboard of the spur
+    """Locked rear hub. The spur (centre drilled to 12.2 mm) is sandwiched between this
+    flange and spur_clamp by 3 M3 bolts; an M3 pinch bolt grips the axle's ground flat."""
+    y_in = SPUR_FACE + SPUR_W + CLAMP_T                              # inboard end, clear of the plate
+    y_out = SPUR_FACE - 8.0
+    s = cy(RA_X, AXLE_Z, y_out, y_in, 12)
+    s += cy(RA_X, AXLE_Z, SPUR_FACE - 3, SPUR_FACE, 30)               # flange
+    s -= cy(RA_X, AXLE_Z, y_out - 1, y_in + 1, 5.2)
+    for x, z in _bolt_circle():
+        s -= cy(x, z, SPUR_FACE - 4, SPUR_FACE + 1, M3_CLR)
+    s -= cx(y_out + 3, AXLE_Z, RA_X - 7, RA_X + 7, M3_CLR)            # pinch bolt, outboard of the flange
     return s
 
+
+def spur_clamp():
+    """Clamp ring on the inboard side of the spur, nut pockets facing the plate.
+    Also the drilling template: tape it to the spur and drill the 3 holes at 3.2 mm."""
+    import math
+    from build123d import RegularPolygon, extrude
+    y0, y1 = SPUR_FACE + SPUR_W, SPUR_FACE + SPUR_W + CLAMP_T
+    c = cy(RA_X, AXLE_Z, y0, y1, 30) - cy(RA_X, AXLE_Z, y0 - 1, y1 + 1, 12.4)
+    for x, z in _bolt_circle():
+        c -= cy(x, z, y0 - 1, y1 + 1, M3_CLR)
+        nut = extrude(RegularPolygon(6.4 / 2, 6), 2.6)                 # M3 nut, 5.5 AF + clearance
+        c -= Pos(x, y1 + 0.01, z) * Rot(90, 0, 0) * nut
+    return c
 
 def hex_hub():
     """Replaces the Hobbypark hubs, which need an M4-threaded axle tip that plain 5 mm rod
@@ -412,7 +434,7 @@ def refs():
     r["wheels"] = Compound([wheel(x, s * TRACK / 2) for x in (FA_X, RA_X) for s in (1, -1)])
     r["battery"] = bx(BATT_X0, BATT_X0 + BATT[0], 1.2, 1.2 + BATT[1], TOP, TOP + BATT[2])
     r["motor"] = cy(MOTOR_X, AXLE_Z, -POD_PLATE_Y, -POD_PLATE_Y + MOTOR_L, MOTOR_D)
-    r["spur"] = cy(RA_X, AXLE_Z, -POD_PLATE_Y - POD_T - 5, -POD_PLATE_Y - POD_T - 10, SPUR_D)
+    r["spur"] = cy(RA_X, AXLE_Z, SPUR_FACE, SPUR_FACE + SPUR_W, SPUR_D)
     r["pinion"] = cy(MOTOR_X, AXLE_Z, -POD_PLATE_Y - POD_T - 1, -POD_PLATE_Y - POD_T - 11, PINION_T / DP * 25.4)
     sx, sy, sz = SERVO
     r["servo"] = bx(SERVO_X - sx / 2, SERVO_X + sx / 2, SPLINE_OFF - sy, SPLINE_OFF, TOP, TOP + sz)
@@ -439,6 +461,7 @@ def parts():
         "pod_floor": (pod_floor(), "PETG, flat"),
         "pod_brace": (pod_brace(), "PLA, flat"),
         "spool": (spool(), "PETG, flange down, 100% infill"),
+        "spur_clamp": (spur_clamp(), "PETG, flat, nut pockets up"),
         "esp32_tray": (esp32_tray(), "PLA, flat"),
         "tie_rod_L_horn": (tie_rod_half(1, "horn"), "PETG, flat, 100% infill"),
         "tie_rod_L_knuckle": (tie_rod_half(1, "knuckle"), "PETG, flat, 100% infill"),
