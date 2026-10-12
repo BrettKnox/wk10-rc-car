@@ -1,4 +1,4 @@
-﻿# WK-10: printable 1/10 on-road pan car
+# WK-10: printable 1/10 on-road pan car
 
 A rear-wheel-drive 1/10 on-road car you can print on the Ender 3 V3, built around parts already in the Vision inventory: the Shaluoman foam tires, an MG996R servo, two ESP32 dev boards, 685ZZ bearings from the 68 pc kit, the 3 mm stainless rods, the spring kit, the M3/M4 hardware and the heat-set inserts. You drive it from a phone, from Python, or from a second ESP32 used as a handheld transmitter. Purchases total about $277 with tax (itemised below).
 
@@ -17,8 +17,8 @@ The RC car in Vision (`C:\Users\bman0\Code\OpsBrain\data\`, project row 33 "RC-C
 | Class | 1/10 on-road pan car, 257 mm wheelbase, 175 mm track | Owned tires are 1/10 on-road (67 mm, 12 mm hex). 257 mm matches TT-01/TT-02/Sakura D5 and EXPLORER-MK1, so standard 190 mm touring bodies fit. |
 | Rear | Pivoting pod, solid 5 mm axle, locked spool | Printed differentials are the most reported failure in printable cars (PLA/PETG diffs soften, seize and click). A pod with a spool has no CV joints, no diff and one axle. A spool pushes slightly in tight corners on foam; acceptable for v1. |
 | Front | Sliding-pillar kingpin (3 mm stainless rod, coil spring above the knuckle) | Uses owned rods and springs. Classic 1/12 pan car front end. |
-| Steering | Servo horn pointing rearward, both tie rods on one bolt, knuckle arms straight back | Solved numerically (`steering()` in `wk10.py`): 88% Ackermann, 36.8 degrees of servo for 28 degrees of lock, 0.32 degrees of bump steer per 3 mm. The obvious layout (arms angled at the rear axle) gave over 200% Ackermann with a central servo. |
-| Tie rods | Printed, two halves joined by a cut M3 stud in heat-set inserts | Replaces ball links and turnbuckles (saves $15). Loose 3.6 mm eyes on M3 bolts tolerate the tilt from 7 mm of bump over a 68 mm rod. Half a turn of the knuckle half is 0.25 mm of toe. |
+| Steering | Servo horn pointing forward, both tie rods on one bolt 12 mm out; 14 mm knuckle arms angled about 22 degrees outboard | Solved numerically (`steering()` in `wk10.py`, each wheel tracked from straight-ahead, inner/outer named by turn direction): 96% Ackermann both ways, 35.1 degrees of servo for 28 degrees of lock, 65 degree minimum transmission angle, 0.27 degrees of bump steer per 3 mm. An earlier layout that looked right on paper (rearward horn, straight arms) was anti-Ackermann; the check now fails it. |
+| Tie rods | Printed, two halves joined by a cut M3 stud in heat-set inserts | Replaces ball links and turnbuckles (saves $15). Loose 3.6 mm eyes on M3 bolts tolerate the tilt from 7 mm of bump over a 64 mm rod. Half a turn of the knuckle half is 0.25 mm of toe. |
 | Motor | Behind the rear axle | Ahead of the axle it collided with the pod pivot. Behind, it puts 58% of the weight on the driven wheels, which matters because launch is traction-limited. |
 | Pan | Split at X=86 mm, joined by a splice block that also carries the servo | 240 mm pan does not fit a 220 bed even diagonally. |
 | Control | Car ESP32 is its own Wi-Fi access point (phone joystick, tuning page, HTTP API) plus ESP-NOW for a second ESP32 transmitter | No radio purchase. Every source goes through one failsafe. |
@@ -113,7 +113,7 @@ C:/Users/bman0/Code/OpsBrain/.venv/Scripts/python.exe C:/Users/bman0/Code/rc-car
 | spool | 1 | PETG | Flange down, 100% infill |
 | spur_clamp | 1 | PETG | Flat, nut pockets up |
 | hex_hub_x4 | 4 | PETG | Collar down, 100% infill |
-| bump_stop_x2 | 2 | PETG | Upright |
+| bump_stops | 2 | PETG | Upright |
 | esp32_tray | 1 | PLA | Flat |
 
 Before printing the bearing parts, print a bore coupon and measure it with the Kynup caliper. Every hole compensation in `wk10.py` (`HOLE_COMP = 0.2`) is an assumed default, not this printer. Change that one knob and re-run.
@@ -126,12 +126,12 @@ Before printing the bearing parts, print a bore coupon and measure it with the K
 4. Front end: four M3 button heads up through the pan. Cut two 47 mm kingpins from the 3 mm rod, deburr, press into the lower arm bosses (drill the boss to 3.0 mm first; it prints about 2.8).
 5. Slide each knuckle onto its kingpin, then the bump-stop sleeve and the spring, then bolt the upper arm down so the kingpin passes through its boss. The spring should be preloaded 2 to 3 mm at ride height.
 6. Front axles: grind a 0.5 mm flat on each 46 mm stub where the hub's set bolt lands (Fanttik rotary tool). Rod through the knuckle bearings, collar inboard, hex hub on the flat, wheel, collar outboard.
-7. Servo: drop into the splice pocket, M3 into the ear-post inserts. Centre it from the phone page (bring-up step 3) before fitting the horn, then fit the horn pointing straight back.
-8. Tie rods: cut the heads off two M3x20 screws, thread each stud halfway into a horn half, then screw the knuckle half on. Both horn eyes stack on one M3 bolt through the horn hole nearest 12 mm from the spline, left rod underneath. Knuckle eyes bolt into the steering-arm post inserts. Set equal lengths (68 mm eye to eye) to start.
-9. Pod: plates onto the floor (4 M3), brace between the plates (2 M3 sideways), motor on the right plate through the slots, 14T pinion on the motor shaft.
+7. Servo: drop into the splice pocket, M3 into the ear-post inserts. Centre it from the phone page (bring-up step 3) before fitting the horn, then fit the horn pointing straight FORWARD. Drill the horn hole nearest 12 mm from the spline to 3.0 mm for the M3 pivot bolt.
+8. Tie rods: cut the heads off two M3x20 screws, thread each stud halfway into a horn half, then screw the knuckle half on. Both horn eyes stack on one M3 bolt through the horn, left rod underneath. Knuckle eyes bolt into the steering-arm post inserts. Set equal lengths (63.8 mm eye to eye) to start.
+9. Pod: stand the plates on the floor against the floor rails and bolt them sideways into the rail inserts (3 M3 on the left plate, 2 on the motor plate). Brace between the plates (2 M3 sideways). Motor on the right plate through the slots, 14T pinion on the motor shaft.
 10. Spur: drill its centre to 12.2 mm. Tape `spur_clamp` to it as a template and drill the three holes at 3.2 mm. Sandwich spur between the spool flange and the clamp ring with three M3x12 bolts and nuts.
-11. Rear axle: grind flats for the spool pinch bolt and both hubs. 211 mm rod through both pod bearings and the spool. Set mesh with a strip of paper between the gears, tighten the motor screws, pinch the spool.
-12. Hang the pod on the pan with the two M4 shoulder bolts into the pod's M4 inserts. M3x35 down through the pan's spring arm, spring, into the pod-floor insert. Set it so the pod sits level at ride height.
+11. Rear axle: grind one 0.5 mm deep flat along the 211 mm rod where the spool sits (about 20 mm long) and short flats where the two hubs land. Slide it through the left bearing, the right bearing and the spool (the spool's D-bore keys on the flat). Shaft collars: one outboard of the left plate, one outboard of the spool, pushed together so the axle has no end float. Set mesh with a strip of paper between the gears, tighten the motor screws.
+12. Hang the pod on the pan with the two M4 shoulder bolts into the pod's M4 inserts (0.6 mm of float each side, so it never clamps). M3x35 down through the pan's spring arm, spring, into the pod-floor insert. Set it so the pod sits level at ride height.
 13. Battery in the left bay with the strap through the slots. ESC and ESP32 tray zip-tied on the right.
 
 ## Wiring
@@ -162,7 +162,7 @@ Three files, Arduino-ESP32 core 3.x:
 
 - `firmware/car_rx/car_rx.ino` runs on the car.
 - `firmware/tx/tx.ino` runs on the optional handheld transmitter.
-- `firmware/libraries/WkLink/WkLink.h` holds the radio packet, the tuning record, the mixing maths, input validation and the boot self-test.
+- `firmware/libraries/WkLink/WkLink.h` holds the radio packet, the tuning record, the control maths, the arming gate, input validation and the self-test.
 
 Both sketches compile (car 77% of flash, transmitter 68%):
 
@@ -170,46 +170,59 @@ Both sketches compile (car 77% of flash, transmitter 68%):
 C:/Users/bman0/AppData/Local/arduino-cli/arduino-cli.exe compile --fqbn esp32:esp32:esp32 --libraries C:/Users/bman0/Code/rc-car/firmware/libraries C:/Users/bman0/Code/rc-car/firmware/car_rx
 ```
 
+The same `wk_selftest()` the car runs at boot also runs on the PC, against the defaults and an asymmetric, reversed, trimmed config. It passes, and three deliberately broken copies of the header (gate that never disarms, slew that ramps from reverse, neutral range widened to 1630 us) each fail it. Rebuild and run it with zig's bundled C++ compiler (project venv, `pip install ziglang`):
+
+```bash
+C:/Users/bman0/Code/rc-car/.venv/Scripts/python.exe -m ziglang c++ -std=c++17 -w -I C:/Users/bman0/Code/rc-car/firmware/libraries/WkLink C:/Users/bman0/Code/rc-car/firmware/test/host_selftest.cpp -o C:/Users/bman0/Code/rc-car/build/selftest.exe
+```
+
+```bash
+C:/Users/bman0/Code/rc-car/build/selftest.exe
+```
+
 ### Ways to drive
 
-1. **Phone.** Set `AP_PASS` in `car_rx.ino` (8+ characters; the access point stays off while it reads `CHANGE-ME`). Join Wi-Fi `WK10-xxxx`, open `http://192.168.4.1`. Hold a finger on the pad: up is throttle, sideways steers, lifting the finger stops the car.
-2. **Python.** On the same Wi-Fi: `python C:/Users/bman0/Code/rc-car/tools/drive.py figure8` drives a 16 second figure-eight at quarter stick (times `maxThrottle`). Write your own `program(t) -> (steer, throttle)` and pass it to `run()`. The API is one call: `GET /drive?s=<-1000..1000>&t=<-1000..1000>&d=<0|1>`, sent at 10 to 50 Hz. `GET /state` returns pulses, battery voltage and source.
-3. **Handheld transmitter.** Second ESP32 with two pots and a dead-man button over ESP-NOW. When it is talking it overrides the phone and API.
+1. **Phone.** Set `AP_PASS` in `car_rx.ino` (8+ characters; the access point stays off while it reads `CHANGE-ME`). Join Wi-Fi `WK10-xxxx`, open `http://192.168.4.1`. Hold a finger on the pad: up is throttle, sideways steers, lifting the finger stops the car. After connecting, touch and release once: the car only arms after it has seen the dead-man released (the status line says `release to arm` until then). Switching apps or locking the phone counts as lifting the finger.
+2. **Python.** On the same Wi-Fi: `python C:/Users/bman0/Code/rc-car/tools/drive.py figure8` drives a 16 second figure-eight at quarter stick (times `maxThrottle`). Write your own `program(t) -> (steer, throttle)` and pass it to `run()`, which arms the car, sends at 20 Hz with rising sequence numbers, and stops the car however the script ends. The API is `GET /drive?s=<-1000..1000>&t=<-1000..1000>&d=<0|1>&n=<rising integer>`. A request with an `n` lower than one already seen gets 409 and is ignored. `GET /state` returns pulses, arming, battery voltage and source.
+3. **Handheld transmitter.** Second ESP32 with two pots and a dead-man button over ESP-NOW. Put a 1k resistor at each end of both pots (10k pots from the WH148 kit), so a broken pot wire reads outside the 340..3755 band and the transmitter sends stop instead of full lock or full throttle. While it is talking it overrides the phone and API. When it drops out the car goes to failsafe, and the phone has to be released and pressed again to take over.
 
 ### Tuning without reflashing
 
-The phone page's Tuning section edits every setting live and saves it to flash: steering centre/endpoints/reverse/expo, ESC neutral/forward/reverse limits, throttle slew, `maxThrottle` and failsafe time. Every value is range-checked on the car (`wk_cfg_valid`), and anything out of range is rejected with a 400. "Defaults" restores the shipped values. Firmware updates can go over Wi-Fi (Arduino OTA, password = `AP_PASS`).
+The phone page's Tuning section edits every setting and saves it to flash: steering centre/endpoints/reverse/expo, ESC neutral/forward/reverse limits, throttle slew, `maxThrottle` and failsafe time. It only accepts changes while the car is stopped (no throttle, dead-man released, for 1 s); otherwise it answers 409. Every value is range-checked on the car (`wk_cfg_valid`) and out-of-range values are rejected with a 400. `escNeutral` is limited to 1470..1530 us and takes effect at the next boot, because the ESC armed on the old value. "Defaults" restores the shipped values. Firmware updates can go over Wi-Fi (Arduino OTA, password = `AP_PASS`); OTA only listens after 5 s with no valid command and the car stopped.
 
 ### Safety
 
-- No valid command for 250 ms (configurable 100 to 1000 ms) sets 1500 us throttle and centre steering. The pulses keep running, so the ESC sees neutral instead of a frozen value.
+- A dedicated control task (priority 10, 100 Hz) is the only thing that writes the servo and ESC pulses, and it owns the failsafe. The web server and OTA run in `loop()`, which can block for seconds on a bad TCP connection, and they only hand commands over under a spinlock. A hung control task trips the task watchdog and resets the chip.
+- No valid command for 250 ms (configurable 100 to 500 ms) sets neutral throttle and centre steering. The pulses keep running, so the ESC sees neutral instead of a frozen value.
+- Arming gate: throttle passes only after the dead-man has been seen released on the current source since boot, since the last failsafe and since the last source change. A brownout reboot mid-run with the trigger held does not launch the car.
 - Throttle is zero unless a dead-man is held: TX button, finger on the phone pad, or `d=1` in the API.
-- `maxThrottle` caps forward power and starts at 0.5. Reverse is capped at half.
+- `maxThrottle` caps forward power and starts at 0.5. Reverse is capped at half. Reverse to forward ramps from zero.
 - If the pack sags below 3.4 V per cell for 2 s under load, throttle is capped at 30% until power-cycle (needs the divider).
-- The car holds neutral for 3 s at boot so the ESC arms on 1500 us.
-- `wk_selftest()` checks the mixing maths, clamping, slew and config validation at every boot. A failure parks the car at neutral and fast-blinks the LED.
-- Radio packets carry a magic number and checksum. `TX_MAC` binds the car to one transmitter.
-- The Wi-Fi is WPA2 with your password. Anyone with it can drive the car, so do not reuse a real password.
+- The car arms the ESC on the saved neutral for 3 s at boot, and every stop uses that same pulse.
+- `wk_selftest()` runs at every boot against the config in use. A failure parks the car at neutral and fast-blinks the LED.
+- Transmitter packets are accepted only from the MAC in `TX_MAC`, with a valid checksum and a newer sequence number than the last one. While `TX_MAC` is all zeros the car ignores every transmitter and prints the MAC of anything it hears. The transmitter refuses to broadcast.
+- The Wi-Fi is WPA2 with your password. Anyone with it can drive the car, so do not reuse a real password. ESP-NOW packets are not encrypted; MAC binding plus sequence numbers stops accidents and replays, not a determined attacker spoofing your transmitter's MAC.
 
 Alternative controller: a PS4/PS5/Switch pad through [Bluepad32](https://github.com/ricardoquesada/bluepad32) would give a sprung trigger. Not built; it needs Bluepad32's own board package and is undocumented alongside ESP-NOW.
 
 ## Bring-up (bench, wheels off the ground)
 
 1. Set `AP_PASS`, flash `car_rx`, open serial at 115200. It must print `selftest: pass` and the car MAC.
-2. Servo horn off. Power the car from USB only (no ESC). Join the Wi-Fi, open the page, confirm the steering pulse follows your finger.
-3. In Tuning, move `steerCenter` until the servo sits where the horn can go on pointing straight back. Fit the horn, then the tie rods.
-4. Move `steerLeft` / `steerRight` inward until the wheels stop just short of 28 degrees of lock, about 37 degrees of servo (the CAD sweep is cleared to 28 degrees with 6.0 mm to spare). Servo buzzing at full lock means the endpoint is too far. Save.
-5. Pinion off. Connect the ESC and battery, BEC set to 6 V. Run the ESC's throttle calibration (neutral, full, reverse per its manual). Check the motor spins the right way; swap two motor wires if not (sensorless only) or set direction in the ESC.
-6. Failsafe tests, wheels in the air: drive at low throttle and (a) lift your finger, (b) switch the phone's Wi-Fi off, (c) Ctrl+C `drive.py`. The motor must stop within a quarter second every time. Do not drive until all three pass.
+2. Servo horn off. Power the car from USB only (no ESC). Join the Wi-Fi, open the page, touch and release the pad, confirm the steering pulse follows your finger.
+3. In Tuning, move `steerCenter` until the servo sits where the horn can go on pointing straight forward. Fit the horn, then the tie rods.
+4. Move `steerLeft` / `steerRight` inward until the inner wheel stops just short of 28 degrees of lock, about 35 degrees of servo (the CAD sweep is cleared to 28 degrees with 3.3 mm to spare). Servo buzzing at full lock means the endpoint is too far. Save.
+5. Pinion off. Connect the ESC and battery, BEC set to 6 V. Run the ESC's throttle calibration (neutral, full, reverse per its manual). Check the motor spins the right way, or set direction in the ESC.
+6. Failsafe tests, wheels in the air: drive at low throttle and (a) lift your finger, (b) switch the phone's Wi-Fi off, (c) Ctrl+C `drive.py`, (d) pull the ESP32's USB/BEC lead and plug it back while holding the pad. The motor must stop within a quarter second every time, and after (d) it must not move until you release and press again. Do not drive until all four pass.
 7. Pinion on, mesh set, first floor run with `maxThrottle` at 0.3.
-8. Optional transmitter: flash `tx`, paste MACs into `CAR_MAC` / `TX_MAC`, reflash both, repeat the failsafe test by unplugging the transmitter.
+8. Optional transmitter: flash `tx` with `CAR_MAC` set, read its MAC from serial (or from the car's `ignored ESP-NOW from` line), put it in `TX_MAC`, reflash the car, repeat the failsafe test by unplugging the transmitter.
 
 ## Test plan
 
 | Test | Pass | Result |
 |---|---|---|
+| Host self-test | `host selftest: pass` | pass, 2026-10-12 |
 | Boot self-test | `selftest: pass` on serial | [ ] |
-| Failsafe (finger up, Wi-Fi off, script killed, TX unplugged) | Motor stops within 250 ms each time | [ ] |
+| Failsafe (finger up, Wi-Fi off, script killed, ESP32 reset while held, TX unplugged) | Motor stops within 250 ms each time and does not restart until released and pressed again | [ ] |
 | Range, open lot | Phone and TX keep `src` live at the far end; ESP32 PCB antennas are rated under about 150 m | [ ] |
 | Tracking | Straight 10 m at half throttle after trim | [ ] |
 | Steering | No servo buzz at either lock; no wheel-to-chassis contact at lock with suspension compressed | [ ] |
@@ -219,9 +232,17 @@ Alternative controller: a PS4/PS5/Switch pad through [Bluepad32](https://github.
 
 ## Known gaps
 
-- Fit checks (`checks()` in `wk10.py`, run on every build) cover: no printed part overlaps another (tie rods included), wheel and knuckle sweep to 28 degrees lock (6.0 mm min gap), front travel +7/-5 mm at straight and full lock (1.5 mm), rear pod swing of 4 degrees each way (0.4 mm), steering linkage Ackermann/servo throw/bump steer, spur and motor ground clearance, bed fit and solid validity. They do not cover the real rim hex depth and offset (not in the listing, measure it), tie rods swept with the knuckles, or spring solid height.
+- Fit checks (`checks()` in `wk10.py`, run on every build) cover:
+  - nothing overlaps anything in the assembled pose, printed parts and the bought parts (axle with its flat, kingpins, collars, motor, spur, pinion, servo, ESC, battery, tires);
+  - wheel and knuckle sweep to 28 degrees of lock (3.3 mm min gap);
+  - front travel +7/-5 mm at straight and full lock (1.5 mm);
+  - rear pod swing of 4 degrees each way (0.6 mm);
+  - steering linkage in both directions: Ackermann 70 to 130%, servo throw 25 to 45 degrees, transmission angle over 40 degrees, symmetry, bump steer under 0.5 degrees per 3 mm;
+  - motor clear of the axle, spur and motor ground clearance, bed fit (two smallest dimensions within 215 x 245) and solid validity.
+
+  They do not cover the real rim hex depth and offset (not in the listing, measure it), tie rods swept with the knuckles, or spring solid height.
 - Listing values to measure on arrival: MG996R ear-hole spacing (49.5 mm) and ear height (26.5 mm), horn top height (`HORN_TOP_Z` 56 mm), spur thickness (`SPUR_W` 6 mm), motor hole spacing (540 standard 25 mm, not stated by Hobbywing). Each is one knob in `wk10.py`.
-- The firmware has not run on hardware. The self-test proves the maths on the chip, not the wiring.
+- The firmware has not run on hardware. The self-test proves the maths, not the wiring or the radio.
 - The front has no damping beyond spring friction, and the rear pod has one spring and no damper. Fine on smooth pavement.
 - Locked rear axle: expect push in tight turns. v2 path is a bought steel 1/10 gear diff in the spool's place (EXPLORER-MK1 uses HSP 02024/03015 parts).
 
