@@ -38,17 +38,21 @@ const int PIN_VBAT  = 34;          // ADC1, input only. 30k top / 10k bottom div
 // ---- knobs you set once ----
 const char *AP_PASS = "CHANGE-ME";  // 8+ chars. Also the OTA password. AP stays off until changed.
 uint8_t TX_MAC[6] = {0, 0, 0, 0, 0, 0};  // the transmitter's MAC; all zero = ignore every transmitter
-const float VBAT_RATIO = 4.0f;     // (top + bottom) / bottom. 0 = no divider fitted.
+const float VBAT_RATIO = 0.0f;     // 0 = no divider fitted (GPIO34 floats). With the 30k/10k divider set 4.0.
 const int CELLS = 2;
 const float CELL_LIMP_V = 3.4f;    // below this under load, throttle is capped at LIMP_THROTTLE
 const float LIMP_THROTTLE = 0.3f;
 const uint32_t ARM_MS = 3000;
 const uint32_t OTA_IDLE_MS = 5000; // OTA only after this long with no valid command
+const uint32_t PARKED_MS = 3000;   // settings/OTA/calibration only after this long at neutral (no wheel sensor)
+const uint32_t ESC_CAL_MS = 60000; // ESC calibration window: full range, no caps, no slew
 
 struct Cmd { float steer, thr; bool deadman; uint32_t ms; };
 static Cmd txCmd = {0, 0, false, 0}, webCmd = {0, 0, false, 0};
 static uint16_t txSeq = 0; static uint32_t webSeq = 0;
-static portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;   // guards txCmd, webCmd, cfg, status
+static portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;   // guards txCmd, webCmd, cfg, status, calUntil
+static uint32_t calUntil = 0;      // ESC calibration mode ends at this millis(); 0 = off
+static volatile bool otaActive = false;  // set when an upload starts: commands ignored, neutral forced
 
 WkCfg cfg = WK_DEFAULTS;
 int bootNeutral = 1500;            // the pulse the ESC armed on; never changes until reboot
@@ -57,8 +61,8 @@ WebServer server(80);
 bool apOn = false;
 
 // status written by the control task, read by the web handlers
-struct Status { int steerUs, escUs; uint8_t src; bool armed, moving, limp; float vbat; uint32_t lastValidMs, stillSinceMs; };
-static Status st = {1500, 1500, WK_SRC_NONE, false, false, false, NAN, 0, 0};
+struct Status { int steerUs, escUs; uint8_t src; bool armed, moving, limp, cal; float vbat; uint32_t lastValidMs, stillSinceMs; };
+static Status st = {1500, 1500, WK_SRC_NONE, false, false, false, false, NAN, 0, 0};
 static volatile uint32_t badPackets = 0;
 
 static uint32_t usToDuty(int us) { return (uint32_t)us * 65535UL / 20000UL; }  // 16-bit at 50 Hz
@@ -96,7 +100,7 @@ void onRecv(const esp_now_recv_info_t *info, const uint8_t *data, int len) {
 
 // ---------------------------------------------------------------- control task
 static void controlTask(void *) {
-  esp_task_wdt_add(NULL);                       // if this task hangs, the chip resets; the ESC then sees no pulses
+  esp_task_wdt_add(NULL);                       // hang > 300 ms resets the chip (setup reconfigures the WDT)
   WkGate gate = {WK_SRC_NONE, false};
   float slewed = 0, vbat = NAN;
   uint32_t lowSince = 0;
@@ -117,6 +121,7 @@ static void controlTask(void *) {
     portENTER_CRITICAL(&mux);
     Cmd tx = txCmd, web = webCmd;
     WkCfg c = cfg;
+    uint32_t calEnd = calUntil;
     portEXIT_CRITICAL(&mux);
     uint32_t now = millis();                     // read AFTER the snapshot: ages are never negative
     float dt = (now - last) / 1000.0f;
@@ -124,11 +129,14 @@ static void controlTask(void *) {
 
     bool txLive = tx.ms && wk_age(now, tx.ms) < c.failsafeMs;
     bool webLive = web.ms && wk_age(now, web.ms) < c.failsafeMs && (int32_t)(web.ms - tx.ms) > 0;
-    uint8_t src = txLive ? WK_SRC_TX : (webLive ? WK_SRC_WEB : WK_SRC_NONE);
+    uint8_t src = otaActive ? WK_SRC_NONE : txLive ? WK_SRC_TX : (webLive ? WK_SRC_WEB : WK_SRC_NONE);
+    // ESC calibration: the ESC must see the true end points, or it learns the caps as 100%.
+    bool cal = calEnd && (int32_t)(calEnd - now) > 0;
+    if (cal) { c.maxThrottle = 1.0f; c.escFwdMax = 2000; c.escRevMax = 1000; c.throttleSlew = 50.0f; }
     const Cmd &cmd = src == WK_SRC_TX ? tx : web;
     bool linkOk = src != WK_SRC_NONE;
 
-    float cap = limp ? fminf(c.maxThrottle, LIMP_THROTTLE) : c.maxThrottle;
+    float cap = (limp && !cal) ? fminf(c.maxThrottle, LIMP_THROTTLE) : c.maxThrottle;
     float want = wk_gate(gate, src, linkOk, linkOk && cmd.deadman, linkOk ? cmd.thr : 0);
     if (want > 0) want *= cap;
     slewed = wk_slew(slewed, want, c.throttleSlew, dt);
@@ -141,7 +149,7 @@ static void controlTask(void *) {
     portENTER_CRITICAL(&mux);
     bool moving = slewed != 0 || (linkOk && cmd.deadman);
     if (moving || !st.stillSinceMs) st.stillSinceMs = moving ? 0 : now;
-    st.steerUs = steerUs; st.escUs = escUs; st.src = src; st.armed = gate.armed; st.moving = moving;
+    st.steerUs = steerUs; st.escUs = escUs; st.src = src; st.armed = gate.armed; st.moving = moving; st.cal = cal;
     st.limp = limp; st.vbat = vbat;
     if (linkOk) st.lastValidMs = now;
     portEXIT_CRITICAL(&mux);
@@ -155,10 +163,11 @@ static Status status() {
   return s;
 }
 
-// stopped for at least 1 s: the only state in which settings or OTA are accepted
+// commanded neutral for PARKED_MS: the only state in which settings, calibration or OTA are accepted.
+// There is no wheel-speed sensor, so a coasting car counts as parked: stop it before you tune it.
 static bool parked() {
   Status s = status();
-  return !s.moving && s.stillSinceMs && wk_age(millis(), s.stillSinceMs) > 1000;
+  return !s.moving && s.stillSinceMs && wk_age(millis(), s.stillSinceMs) > PARKED_MS;
 }
 
 // ---------------------------------------------------------------- settings in flash
@@ -194,7 +203,8 @@ button{font-size:16px;min-height:44px;padding:0 16px;margin:4px}#st{font-family:
 <h1 style="font-size:20px">WK-10</h1><div id="pad" role="application" aria-label="Drive pad: hold to drive, up is throttle, sideways steers"><div id="dot"></div></div>
 <div id="st" aria-live="polite">connecting</div>
 <details><summary>Tuning (saved to the car; only while stopped)</summary><form id="f"></form>
-<button id="save">Save</button><button id="def">Defaults</button></details>
+<button id="save">Save</button><button id="def">Defaults</button>
+<p>ESC calibration: wheels off the ground, then press, then follow the ESC manual within 60 s.</p><button id="cal">ESC calibration mode (60 s)</button></details>
 <script>
 const F=["steerCenter","steerLeft","steerRight","steerReverse","escNeutral","escFwdMax","escRevMax","throttleSlew","steerExpo","maxThrottle","failsafeMs"];
 let s=0,t=0,held=0,n=Date.now()%2000000000;const pad=document.getElementById('pad'),dot=document.getElementById('dot');
@@ -204,12 +214,13 @@ function up(){held=0;s=0;t=0;dot.style.left=dot.style.top='calc(50% - 28px)'}
 pad.onpointerdown=e=>{held=1;pad.setPointerCapture(e.pointerId);mv(e)};pad.onpointermove=e=>{if(held)mv(e)};
 pad.onpointerup=pad.onpointercancel=up;document.addEventListener('visibilitychange',up);window.addEventListener('blur',up);
 async function tick(){try{const r=await fetch(`/drive?s=${Math.round(s*1000)}&t=${Math.round(t*1000)}&d=${held}&n=${++n}`);
-const j=await r.json();document.getElementById('st').textContent=`src ${j.src} ${j.armed?'':'(release to arm)'}  steer ${j.steer_us}us  esc ${j.esc_us}us\nbatt ${j.vbat??'n/a'} V ${j.limp?'LIMP':''}  bad pkts ${j.bad}`}
+const j=await r.json();document.getElementById('st').textContent=`${j.cal?'ESC CAL  ':''}src ${j.src} ${j.armed?'':'(release to arm)'}  steer ${j.steer_us}us  esc ${j.esc_us}us\nbatt ${j.vbat??'n/a'} V ${j.limp?'LIMP':''}  bad pkts ${j.bad}`}
 catch(e){document.getElementById('st').textContent='no link'}setTimeout(tick,50)}tick();
 async function load(){const c=await (await fetch('/cfg')).json();document.getElementById('f').innerHTML=F.map(k=>
 `<label>${k}<input name="${k}" value="${c[k]}" inputmode="decimal"></label>`).join('')}load();
 document.getElementById('save').onclick=async()=>{const q=new URLSearchParams(new FormData(document.getElementById('f')));
 const r=await fetch('/cfg?'+q,{method:'POST'});alert(r.ok?'saved (escNeutral applies after a reboot)':'rejected: '+await r.text());load()};
+document.getElementById('cal').onclick=async()=>{const r=await fetch('/esc_cal',{method:'POST'});alert(r.ok?'calibration mode on for 60 s: full range, no caps':await r.text())};
 document.getElementById('def').onclick=async()=>{const r=await fetch('/cfg/defaults',{method:'POST'});if(!r.ok)alert(await r.text());load()};
 </script></html>)HTML";
 
@@ -236,8 +247,8 @@ static void sendState() {
   char b[220], vb[12];
   if (isnan(s.vbat)) strcpy(vb, "null"); else snprintf(vb, sizeof vb, "%.2f", s.vbat);
   const char *src = s.src == WK_SRC_TX ? "tx" : s.src == WK_SRC_WEB ? "web" : "failsafe";
-  snprintf(b, sizeof b, "{\"src\":\"%s\",\"armed\":%s,\"steer_us\":%d,\"esc_us\":%d,\"vbat\":%s,\"limp\":%s,\"bad\":%lu}",
-           src, s.armed ? "true" : "false", s.steerUs, s.escUs, vb, s.limp ? "true" : "false",
+  snprintf(b, sizeof b, "{\"cal\":%s,\"src\":\"%s\",\"armed\":%s,\"steer_us\":%d,\"esc_us\":%d,\"vbat\":%s,\"limp\":%s,\"bad\":%lu}",
+           s.cal ? "true" : "false", src, s.armed ? "true" : "false", s.steerUs, s.escUs, vb, s.limp ? "true" : "false",
            (unsigned long)badPackets);
   server.send(200, "application/json", b);
 }
@@ -339,6 +350,13 @@ void setup() {
     server.on("/state", sendState);
     server.on("/cfg", HTTP_GET, handleCfgGet);
     server.on("/cfg", HTTP_POST, handleCfgPost);
+    server.on("/esc_cal", HTTP_POST, [] {
+      if (!parked()) { server.send(409, "text/plain", "stop the car first"); return; }
+      portENTER_CRITICAL(&mux);
+      calUntil = millis() + ESC_CAL_MS;
+      portEXIT_CRITICAL(&mux);
+      server.send(200, "text/plain", "ok");
+    });
     server.on("/cfg/defaults", HTTP_POST, [] {
       if (!parked()) { server.send(409, "text/plain", "stop the car first"); return; }
       saveCfg(WK_DEFAULTS);
@@ -347,6 +365,8 @@ void setup() {
     server.begin();
     ArduinoOTA.setHostname(ssid);
     ArduinoOTA.setPassword(AP_PASS);
+    ArduinoOTA.onStart([] { otaActive = true; });   // control task forces neutral and ignores commands
+    ArduinoOTA.onError([](ota_error_t) { otaActive = false; });
     ArduinoOTA.begin();
     Serial.printf("Wi-Fi %s up, open http://192.168.4.1\n", ssid);
   } else {
@@ -360,6 +380,8 @@ void setup() {
 
   uint32_t t0 = millis();                       // ESC arming window: neutral only
   while (millis() - t0 < ARM_MS) { digitalWrite(PIN_LED, millis() / 500 % 2); delay(10); }
+  esp_task_wdt_config_t wdt = {300, 0, true};   // 300 ms, subscribed tasks only, panic -> reset
+  esp_task_wdt_reconfigure(&wdt);
   xTaskCreatePinnedToCore(controlTask, "control", 4096, nullptr, 10, nullptr, 1);
 }
 

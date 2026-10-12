@@ -26,7 +26,7 @@ def send(steer, throttle, deadman=True):
     s = max(-1000, min(1000, round(steer * 1000)))
     t = max(-1000, min(1000, round(throttle * 1000)))
     url = f"{CAR}/drive?s={s}&t={t}&d={1 if deadman else 0}&n={_seq}"
-    with urllib.request.urlopen(url, timeout=0.5) as r:
+    with urllib.request.urlopen(url, timeout=0.2) as r:       # under the car's 250 ms failsafe
         return json.load(r)
 
 
@@ -40,6 +40,11 @@ def run(program, seconds):
         while (t := time.monotonic() - t0) < seconds:
             st = send(*program(t))
             print(f"\r{t:5.1f}s  {st}", end="")
+            if st["src"] != "web" or not st["armed"]:
+                # a slow request let the failsafe fire (or the TX took over); the car disarmed
+                # and will not drive again until it sees d=0, so stop loudly instead of sending
+                # d=1 into a dead car for the rest of the program
+                raise RuntimeError(f"car left web control: {st}")
             time.sleep(1 / HZ)
     finally:
         for _ in range(3):

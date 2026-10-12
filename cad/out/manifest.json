@@ -91,7 +91,7 @@
  },
  "pod_floor": {
   "print": "PETG, flat",
-  "volume_cm3": 42.7,
+  "volume_cm3": 42.8,
   "bbox_mm": [
    103.2,
    100.0,
@@ -177,6 +177,24 @@
    16.0,
    16.0,
    12.0
+  ]
+ },
+ "race_shims_x4": {
+  "print": "PETG, flat, print 4",
+  "volume_cm3": 0.0,
+  "bbox_mm": [
+   7.0,
+   7.0,
+   1.0
+  ]
+ },
+ "spring_shims_x3": {
+  "print": "PETG, flat",
+  "volume_cm3": 0.5,
+  "bbox_mm": [
+   38.0,
+   10.0,
+   4.0
   ]
  },
  "bump_stops": {

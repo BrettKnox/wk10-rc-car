@@ -66,7 +66,9 @@ UPPER_Z = (50.0, 55.0)              # 14 mm spring gap; housing clears the arm t
 
 POD_PLATE_Y, POD_T = 45.0, 5.0      # pod side plates (PETG: motor runs hot)
 PIVOT_X, PIVOT_Z = -78.0, 16.0
-LUG_Y0, LUG_T = 14.2, 9.4           # pan pivot lugs: 9.4 + 0.6 gap = the 10 mm shoulder, so it never clamps
+LUG_Y0, LUG_T = 14.2, 9.4           # pan pivot lugs, 9.4 mm thick
+POD_LUG_HW = 13.9                   # pod lug half-width: shoulder (10) ends here, head lands 0.3 past the pan lug,
+                                    # and the lugs sit 0.3 apart: 0.3 mm float each way, never clamps
 SPRING_X, SPRING_Y = -102.0, 34.0   # rear pod spring: clear of the brace, the pivot bolt head and the battery
 POD_BRACE_X = RA_X + 8              # brace sits between the plates, ahead of the axle
 
@@ -286,6 +288,8 @@ def steering():
             d += 0.1
             t = sign * math.radians(d)
             (pl, tl), (pr, tr) = track(1, t, steps=60), track(-1, t, steps=60)
+            if (pl > 0) != (pr > 0):
+                raise ValueError(f"wheels steer opposite ways at servo {d:.1f} deg")
             left_turn = pl > 0
             inner, outer = (abs(pl), abs(pr)) if left_turn else (abs(pr), abs(pl))
             if inner >= lock or d > 70:
@@ -297,6 +301,8 @@ def steering():
             "ackermann_pct": round(100 * (inner - outer) / (inner - ideal)),
             "min_transmission_deg": round(min(tl, tr))}
     out["bump_steer_deg_per_3mm"] = round(math.degrees(track(1, 0.0, 3.0, steps=1)[0]), 2)
+    out["bump_steer_deg_full"] = round(max(abs(math.degrees(track(1, 0.0, dz, steps=1)[0]))
+                                         for dz in (BUMP_MM, -DROOP_MM)), 2)
     out["rod_mm"] = round(L[1], 1)
     return out
 
@@ -362,10 +368,10 @@ def pod_floor():
     # pivot lug: rides between the pan lugs on the M4 shoulder bolt
     # Each uxcell M4 shoulder bolt (5 x 10 mm shoulder) passes through a 10 mm pan lug
     # and threads into an M4 heat-set insert here, so the shoulder is the bearing.
-    f += bx(PAN_X0 - 2.5, PIVOT_X + 6, -13.6, 13.6, TOP + 1.8, PIVOT_Z + 6)  # clears the pan through +-4 deg
-    f += bx(PAN_X0 - 8, PAN_X0 - 2.5, -13.6, 13.6, 8, TOP + 3)    # tongue to the floor
+    f += bx(PAN_X0 - 2.5, PIVOT_X + 6, -POD_LUG_HW, POD_LUG_HW, TOP + 1.8, PIVOT_Z + 6)  # clears the pan through +-4 deg
+    f += bx(PAN_X0 - 8, PAN_X0 - 2.5, -POD_LUG_HW, POD_LUG_HW, 8, TOP + 3)    # tongue to the floor
     for s in (1, -1):
-        y0, y1 = sorted((s * 13.7, s * 6.0))
+        y0, y1 = sorted((s * (POD_LUG_HW + 0.1), s * 6.0))
         f -= cy(PIVOT_X, PIVOT_Z, y0, y1, 5.6)                        # M4 insert pilot
     # spring seat under the pan's spring arm + insert for the M3x35 spring bolt
     f += cz(SPRING_X, SPRING_Y, 12, 16, 10)                                    # 8 mm under a 6.3 mm insert
@@ -387,6 +393,8 @@ def pod_brace():
 
 
 AXLE_FLAT = 2.0                     # ground flat sits 2.0 mm from the axle centre (0.5 mm deep)
+D_BORE = 5.0 + 0.15 + HOLE_COMP     # spool D-bore: slides along 100 mm of axle
+D_FLAT = AXLE_FLAT + 0.1 + HOLE_COMP / 2
 SPUR_W = 6.0                        # VERIFY: thickness of the spur you buy at the hub
 SPUR_FACE = -POD_PLATE_Y - POD_T - 11.0  # outboard face of the spur, against the flange
 CLAMP_T = 3.5
@@ -409,8 +417,8 @@ def spool():
     s = cy(RA_X, AXLE_Z, y_out, y_hub, 12)
     s += cy(RA_X, AXLE_Z, y_hub, y_tip, 7)                            # touches the inner race only
     s += cy(RA_X, AXLE_Z, SPUR_FACE - 3, SPUR_FACE, 30)               # flange
-    s -= cy(RA_X, AXLE_Z, y_out - 1, y_tip + 1, 5.2) & bx(RA_X - 4, RA_X + 4, y_out - 1, y_tip + 1,
-                                                          AXLE_Z - 4, AXLE_Z + AXLE_FLAT + 0.1)
+    s -= cy(RA_X, AXLE_Z, y_out - 1, y_tip + 1, D_BORE) & bx(RA_X - 4, RA_X + 4, y_out - 1, y_tip + 1,
+                                                            AXLE_Z - 4, AXLE_Z + D_FLAT)
     for x, z in _bolt_circle():
         s -= cy(x, z, SPUR_FACE - 4, SPUR_FACE + 1, M3_CLR)
     return s
@@ -441,6 +449,17 @@ def hex_hub():
     h -= cx(0, 3.5, 0, 9, M3_CLR).rotate(Axis.Z, 90)                   # radial M3 set bolt
     h -= bx(-3.3, 3.3, 3.6, 6.3, -1, 6.4)                              # nut slot (flats up), loads from below
     return h
+
+
+def race_shim():
+    """5 x 7 x 1 mm: lets a collar or hub bear on a 685's inner race only. Two go between the front
+    hub collars and the outer knuckle bearings, one between the rear-left collar and its bearing."""
+    return cz(0, 0, 0, 1.0, 7.0) - cz(0, 0, -1, 2, 5.0 + 0.3 + HOLE_COMP)
+
+
+def spring_shim(h):
+    """Stack under the rear pod spring to set ride height (print one each of 1, 2 and 4 mm)."""
+    return cz(0, 0, 0, h, 10.0) - cz(0, 0, -1, h + 1, M3_CLR)
 
 
 def bump_stop():
@@ -485,7 +504,7 @@ def refs():
     # 5 mm shaft collars: left outboard of the left plate, right outboard of the spool
     y_sp = SPUR_FACE - 3.0
     collar = lambda y0, y1: cy(RA_X, AXLE_Z, y0, y1, 10) - cy(RA_X, AXLE_Z, y0 - 1, y1 + 1, 5.05)
-    r["collars"] = Compound([collar(POD_PLATE_Y + POD_T + 0.5, POD_PLATE_Y + POD_T + 5.5), collar(y_sp - 5, y_sp)])
+    r["collars"] = Compound([collar(POD_PLATE_Y + POD_T + 1.0, POD_PLATE_Y + POD_T + 6.0), collar(y_sp - 5, y_sp)])
     r["kingpins"] = Compound([cz(FA_X, s * KINGPIN_Y, KP_Z0, KP_Z1, 3) for s in (1, -1)])
     return r
 
@@ -514,6 +533,9 @@ def parts():
         "tie_rod_R_horn": (tie_rod_half(-1, "horn"), "PETG, flat, 100% infill"),
         "tie_rod_R_knuckle": (tie_rod_half(-1, "knuckle"), "PETG, flat, 100% infill"),
         "hex_hub_x4": (Pos(0, -150, 0) * hex_hub(), "PETG, collar down, 100% infill, print 4"),
+        "race_shims_x4": (Pos(60, -150, 0) * race_shim(), "PETG, flat, print 4"),
+        "spring_shims_x3": (Compound([Pos(80 + 14 * i, -150, 0) * spring_shim(h) for i, h in enumerate((1, 2, 4))]),
+                            "PETG, flat"),
         "bump_stops": (Compound([Pos(FA_X, s * KINGPIN_Y, KNUCKLE_Z[1]) * bump_stop() for s in (1, -1)]),
                        "PETG, upright, print 2"),
     }
@@ -547,6 +569,7 @@ def checks(ps, r):
         assert st[turn]["min_transmission_deg"] >= 40, f"linkage near toggle {st}"
     assert st["left"]["servo_deg"] == st["right"]["servo_deg"], f"asymmetric linkage {st}"
     assert abs(st["bump_steer_deg_per_3mm"]) < 0.5, f"bump steer {st}"
+    assert st["bump_steer_deg_full"] < 1.6, f"bump steer at full travel {st}"
     # nothing overlaps anything in the assembled pose: printed parts AND the bought parts
     # (axle, kingpins, collars, motor, spur, pinion, servo, ESC, battery, wheels)
     allb = {k: v for k, v in solid.items() if k != "hex_hub_x4"}
@@ -585,7 +608,10 @@ def checks(ps, r):
     pod += [r["motor"], r["spur"], r["wheels"]]
     pax = Axis((PIVOT_X, 0, PIVOT_Z), (0, 1, 0))
     pod_gap = min(p.rotate(pax, a).distance_to(solid["pan_rear"]) for p in pod for a in (-4, 4))
-    assert pod_gap > 0.3, f"pod swing clearance {pod_gap:.2f} mm"
+    assert pod_gap > 0.25, f"pod swing clearance {pod_gap:.2f} mm"     # 0.3 is the designed lug side float
+    import math
+    drop = (PIVOT_X - RA_X) * math.sin(math.radians(4))                # pivot drop at 4 deg of pod swing
+    assert FLOOR_Z - drop > 1.0, f"pan rear touches the ground at 4 deg of pod swing ({FLOOR_Z - drop:.1f} mm)"
     print(f"checks ok: clearances, spur/motor height, bed fit, validity, no part overlaps, "
           f"steering sweep +-{MAX_LOCK_DEG} deg min gap {worst:.1f} mm, front travel +{BUMP_MM}/-{DROOP_MM} "
           f"min gap {travel:.1f} mm, pod swing +-4 deg min gap {pod_gap:.1f} mm "
@@ -595,7 +621,7 @@ def checks(ps, r):
 
 # rotation (deg about X, then Y, then Z) that puts each part in its slicer orientation
 PRINT_ROT = {
-    "knuckle_L": (90, 0, 0), "knuckle_R": (-90, 0, 0),             # axle bore vertical, housing end down
+    "knuckle_L": (-90, 0, 0), "knuckle_R": (90, 0, 0),             # axle bore vertical, housing end down
     "pod_plate_L": (90, 0, 0), "pod_plate_R_motor": (-90, 0, 0),   # lay the plates flat
     "spool": (90, 0, 0),                                           # flange face down
     "spur_clamp": (90, 0, 0),                                      # nut pockets up
@@ -617,7 +643,7 @@ def calibration_coupon():
     3.5, hub bore 5.35, M3 insert 4.2, M4 insert 5.6, M3 clearance 3.4. On the side face:
     the same 11.2 and 3.5 bores printed horizontally (the knuckle's kingpin bore prints that way).
     Adjust HOLE_COMP until the 685 drops in with a light press."""
-    holes = [11.2, 3.0, 3.5, 5.35, 4.2, 5.6, 3.4]
+    holes = [11.2, 3.0, 3.5, 5.35, 4.2, 5.6, 3.4, D_BORE]
     xs, x = [], 4.0
     for d in holes:
         x += d / 2 + 3
@@ -627,6 +653,7 @@ def calibration_coupon():
     c = bx(0, w, 0, 18, 0, 8)
     for xc, d in zip(xs, holes):
         c -= cz(xc, 9, -1, 9, d)
+    c += bx(xs[-1] - 4, xs[-1] + 4, 9 + D_FLAT, 13, 0, 8)           # last hole is the spool's D-bore
     c += bx(0, 30, 18, 32, 0, 16)                                    # side block for horizontal bores
     c -= cy(9, 8, 17, 33, 11.2)
     c -= cy(23, 8, 17, 33, 3.5)
