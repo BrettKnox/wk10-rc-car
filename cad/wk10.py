@@ -54,6 +54,11 @@ KINGPIN_Y = 56.0                    # inboard of the bearing housing
 KNUCKLE_Z = (22.0, 36.0)            # barrel on the kingpin: spring gap above, droop room below
 BUMP_MM, DROOP_MM = 7.0, 5.0        # travel the checks prove clear; bump_stop sleeve enforces 7
 MAX_LOCK_DEG = 28.0                 # firmware endpoint; the sweep check proves it clears
+STEER_ARM = 16.0                    # kingpin to tie-rod eye, straight back
+HORN_R = 12.0                       # horn hole used, pointing REARWARD; nearest hole on the stock horn
+HORN_TOP_Z = 56.0                   # VERIFY: top face of the horn on the mounted servo
+EYE_T = 3.0                         # tie-rod eye thickness; both rods stack on one horn bolt
+EYE_Z = {1: HORN_TOP_Z + 1.6, -1: HORN_TOP_Z + 1.6 + EYE_T + 0.2}   # left rod low, right rod high
 KP_Z0, KP_Z1 = 9.0, 56.0            # 3 mm rod, cut 47 mm
 LOWER_Z = (TOP, TOP + 6.0)     # sits on the pan top
 UPPER_Z = (50.0, 55.0)              # 14 mm spring gap; housing clears the arm through bump
@@ -205,13 +210,13 @@ def knuckle(side=1):
     k += cy(FA_X, AXLE_Z, y_in, y_out, 16)
     yb0, yb1 = sorted((s * KINGPIN_Y, s * 64))
     k += bx(FA_X - 5, FA_X + 5, yb0, yb1, kz0, kz1)
-    # steering arm: back toward the rear axle (Ackermann line), up to tie-rod height
-    arm_x = FA_X - 16
-    arm_y = s * (KINGPIN_Y - 16 * KINGPIN_Y / WB)
-    ya0, ya1 = sorted((s * KINGPIN_Y, arm_y))
-    k += bx(arm_x, FA_X, ya0 - 3, ya1 + 3, kz1 - 4, kz1)
-    k += cz(arm_x, arm_y, kz1 - 4, 49, 7)
-    k -= cz(arm_x, arm_y, kz1 - 5, 50, 2.5)                         # M3 self-tap for the ball stud
+    # steering arm: straight back (steering() shows this gives ~90% Ackermann with the
+    # rearward horn), post up to this side's tie-rod eye height
+    arm_x, arm_y = FA_X - STEER_ARM, s * KINGPIN_Y
+    k += bx(arm_x, FA_X, arm_y - 3, arm_y + 3, kz1 - 4, kz1)
+    top = EYE_Z[s] - 1.6
+    k += cz(arm_x, arm_y, kz1 - 4, top, 8)
+    k -= insert(arm_x, arm_y, top)                                   # M3 pivot bolt through the eye
     k -= cz(FA_X, s * KINGPIN_Y, kz0 - 1, kz1 + 1, ROD3_SLIDE)
     # bearing seats from each end, 3 mm land between them
     k -= cy(FA_X, AXLE_Z, y_in - 1, y_in + B685[2], BRG_OD) if s > 0 else \
@@ -220,6 +225,73 @@ def knuckle(side=1):
          cy(FA_X, AXLE_Z, y_in - 1, y_in + B685[2], BRG_OD)
     k -= cy(FA_X, AXLE_Z, y_in - 1, y_out + 1, 7.0)
     return k
+
+
+def _rot(x, y, a):
+    import math
+    return x * math.cos(a) - y * math.sin(a), x * math.sin(a) + y * math.cos(a)
+
+
+def steering():
+    """Planar linkage solve: servo horn (pointing rearward, both rods on one bolt) ->
+    tie rod -> knuckle arm. Returns servo angle for MAX_LOCK, inner/outer angles,
+    Ackermann %, bump steer, rod length. Pure math, no CAD."""
+    import math
+    hx, hy = SERVO_X, 0.0
+
+    def arm(s, p):
+        vx, vy = _rot(-STEER_ARM, 0.0, p)
+        return FA_X + vx, s * KINGPIN_Y + vy
+
+    def horn(t):
+        vx, vy = _rot(-HORN_R, 0.0, t)
+        return hx + vx, hy + vy
+
+    L = math.dist(horn(0), arm(1, 0))
+
+    def phi(s, t, dz=0.0):                       # wheel angle (rad) for servo angle t
+        h = horn(t)
+        f = lambda p: math.dist(h, arm(s, p)) ** 2 + dz * dz - L * L
+        for i in range(1, 1400):                 # nearest root to straight-ahead
+            p0, p1 = i * 1e-3, (i - 1) * 1e-3
+            for a, b in ((p0, p1), (-p0, -p1)):
+                if f(a) * f(b) <= 0:
+                    return (a + b) / 2
+        raise ValueError("linkage toggles before lock")
+
+    lock = math.radians(MAX_LOCK_DEG)
+    t = 0.0
+    while abs(phi(1, t)) < lock:                 # servo angle that puts the inner wheel at lock
+        t -= math.radians(0.1)
+    inner, outer = abs(phi(1, t)), abs(phi(-1, t))
+    ideal = math.atan(1 / (1 / math.tan(inner) + 2 * KINGPIN_Y / WB))
+    return {"servo_deg": round(math.degrees(abs(t)), 1),
+            "inner_deg": round(math.degrees(inner), 1), "outer_deg": round(math.degrees(outer), 1),
+            "ideal_outer_deg": round(math.degrees(ideal), 1),
+            "ackermann_pct": round(100 * (inner - outer) / (inner - ideal)),
+            "bump_steer_deg_per_3mm": round(math.degrees(phi(1, 0, 3.0)), 2),
+            "rod_mm": round(L, 1)}
+
+
+def tie_rod_half(side=1, end="horn"):
+    """Each tie rod = two printed halves joined by a headless M3 stud (cut an M3x20) running
+    in an insert in each half; turning the knuckle half 180 deg moves toe by 0.25 mm."""
+    import math
+    s = side
+    p0 = (SERVO_X - HORN_R, 0.0)
+    p1 = (FA_X - STEER_ARM, s * KINGPIN_Y)
+    L = math.dist(p0, p1)
+    ang = math.degrees(math.atan2(p1[1] - p0[1], p1[0] - p0[0]))
+    gap = 4.0
+    half = L / 2 - gap / 2
+    eye = cz(0, 0, -EYE_T / 2, EYE_T / 2, 8.0) - cz(0, 0, -2, 2, 3.6)   # loose: tilts with bump
+    bar = bx(3.5, half - 4, -3, 3, -EYE_T / 2, EYE_T / 2)
+    boss = cx(0, 0, half - 8, half, 7.6)
+    h = eye + bar + boss
+    h -= cx(0, 0, half - M3_INS_DEPTH, half + 0.01, M3_INS)
+    h = h.rotate(Axis.Z, ang if end == "horn" else ang + 180)
+    x, y = p0 if end == "horn" else p1
+    return Pos(x, y, EYE_Z[s]) * h
 
 
 # ---------------------------------------------------------------- rear pod
@@ -368,6 +440,10 @@ def parts():
         "pod_brace": (pod_brace(), "PLA, flat"),
         "spool": (spool(), "PETG, flange down, 100% infill"),
         "esp32_tray": (esp32_tray(), "PLA, flat"),
+        "tie_rod_L_horn": (tie_rod_half(1, "horn"), "PETG, flat, 100% infill"),
+        "tie_rod_L_knuckle": (tie_rod_half(1, "knuckle"), "PETG, flat, 100% infill"),
+        "tie_rod_R_horn": (tie_rod_half(-1, "horn"), "PETG, flat, 100% infill"),
+        "tie_rod_R_knuckle": (tie_rod_half(-1, "knuckle"), "PETG, flat, 100% infill"),
         "hex_hub_x4": (Pos(0, -150, 0) * hex_hub(), "PETG, collar down, 100% infill, print 4"),
         "bump_stop_x2": (Pos(30, -150, 0) * bump_stop(), "PETG, upright, print 2"),
     }
@@ -393,6 +469,10 @@ def checks(ps, r):
         bb = sorted([s.bounding_box().size.X, s.bounding_box().size.Y, s.bounding_box().size.Z])
         assert bb[1] <= 215 and bb[2] <= 215 * 1.41 and bb[0] <= 245, f"{k} too big {bb}"
         assert s.is_valid, f"{k} invalid solid"
+    st = steering()
+    assert 70 <= st["ackermann_pct"] <= 130, f"Ackermann {st}"
+    assert 25 <= st["servo_deg"] <= 45, f"servo throw for lock {st}"
+    assert abs(st["bump_steer_deg_per_3mm"]) < 0.5, f"bump steer {st}"
     # printed parts must not overlap each other in the assembled pose
     names = list(solid)
     for i, a in enumerate(names):
@@ -432,7 +512,8 @@ def checks(ps, r):
     print(f"checks ok: clearances, spur/motor height, bed fit, validity, no part overlaps, "
           f"steering sweep +-{MAX_LOCK_DEG} deg min gap {worst:.1f} mm, front travel +{BUMP_MM}/-{DROOP_MM} "
           f"min gap {travel:.1f} mm, pod swing +-4 deg min gap {pod_gap:.1f} mm "
-          f"(NOT tested: real rim hex depth/offset, tie-rod path, spring solid height)")
+          f"steering {st} "
+          f"(NOT tested: real rim hex depth/offset, tie rods swept with the knuckles, spring solid height)")
 
 
 if __name__ == "__main__":
