@@ -5,7 +5,9 @@ Join the car's "WK10-xxxx" network, then:
     python C:/Users/bman0/Code/rc-car/tools/drive.py state
 
 The car stops on its own if commands stop for failsafeMs (250 ms default), so a crash,
-Ctrl+C or a dropped link all end at neutral. Commands are sent at 20 Hz.
+Ctrl+C or a dropped link all end at neutral. Commands are sent at 20 Hz with a rising
+sequence number n, so a request delivered late cannot override a newer one. The car only
+accepts throttle after it has seen the dead-man released, so run() sends a few d=0 first.
 """
 import json
 import math
@@ -15,18 +17,24 @@ import urllib.request
 
 CAR = "http://192.168.4.1"
 HZ = 20
+_seq = int(time.time() * 1000) % 2_000_000_000
 
 
 def send(steer, throttle, deadman=True):
+    global _seq
+    _seq += 1
     s = max(-1000, min(1000, round(steer * 1000)))
     t = max(-1000, min(1000, round(throttle * 1000)))
-    url = f"{CAR}/drive?s={s}&t={t}&d={1 if deadman else 0}"
+    url = f"{CAR}/drive?s={s}&t={t}&d={1 if deadman else 0}&n={_seq}"
     with urllib.request.urlopen(url, timeout=0.5) as r:
         return json.load(r)
 
 
 def run(program, seconds):
     """program(t) -> (steer -1..1, throttle -1..1). Stops the car however it ends."""
+    for _ in range(3):                              # arm: the car must see the dead-man released
+        send(0, 0, deadman=False)
+        time.sleep(1 / HZ)
     t0 = time.monotonic()
     try:
         while (t := time.monotonic() - t0) < seconds:
@@ -37,7 +45,7 @@ def run(program, seconds):
         for _ in range(3):
             try:
                 send(0, 0, deadman=False)
-            except OSError:
+            except Exception:                       # keep trying; the car's failsafe is the backstop
                 pass
         print()
 

@@ -3,3 +3,4 @@ cad/out/*.stl
 !cad/out/wk10_assembly.step
 __pycache__/
 build/
+.venv/
