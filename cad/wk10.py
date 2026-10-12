@@ -59,6 +59,8 @@ STEER_ARM_OUT = 0.4                 # eye sits 0.4 x STEER_ARM outboard of strai
 HORN_R = 12.0                       # horn hole used, pointing FORWARD; drill the stock horn hole to 3.0 mm
 HORN_TOP_Z = 56.0                   # VERIFY: top face of the horn on the mounted servo
 EYE_T = 3.0                         # tie-rod eye thickness; both rods stack on one horn bolt
+BAR_H = 5.0                         # tie-rod bar depth away from the eyes (Euler buckling vs servo stall)
+SERVO_STALL_NM = 1.08               # MG996R listing at 6 V (11 kg-cm); VERIFY, it varies by clone
 EYE_Z = {1: HORN_TOP_Z + 1.6, -1: HORN_TOP_Z + 1.6 + EYE_T + 0.2}   # left rod low, right rod high
 KP_Z0, KP_Z1 = 9.0, 56.0            # 3 mm rod, cut 47 mm
 LOWER_Z = (TOP, TOP + 6.0)     # sits on the pan top
@@ -320,7 +322,8 @@ def tie_rod_half(side=1, end="horn", p0=None, p1=None):
     gap = 4.0
     half = L / 2 - gap / 2
     eye = cz(0, 0, -EYE_T / 2, EYE_T / 2, 8.0) - cz(0, 0, -2, 2, 3.6)   # loose: tilts with bump
-    bar = bx(3.5, half - 4, -3, 3, -EYE_T / 2, EYE_T / 2)
+    bar = bx(3.5, 8.0, -3, 3, -EYE_T / 2, EYE_T / 2)                    # thin by the eye: the rods stack here
+    bar += bx(8.0, half - 4, -3, 3, -EYE_T / 2, -EYE_T / 2 + BAR_H)      # deep, flat-bottomed section
     boss = bx(half - 8, half, -3.8, 3.8, -EYE_T / 2, -EYE_T / 2 + 7.6)   # flat bottom: prints without support
     h = eye + bar + boss
     h -= cx(0, -EYE_T / 2 + 3.8, half - M3_INS_DEPTH, half + 0.01, M3_INS)
@@ -572,6 +575,12 @@ def checks(ps, r):
     assert st["left"]["servo_deg"] == st["right"]["servo_deg"], f"asymmetric linkage {st}"
     assert abs(st["bump_steer_deg_per_3mm"]) < 0.5, f"bump steer {st}"
     assert st["bump_steer_deg_full"] < 1.6, f"bump steer at full travel {st}"
+    # tie rod buckling (pinned-pinned Euler, PETG E 2100 MPa, weaker bending axis) vs servo stall push
+    i_min = min(6 * BAR_H ** 3, BAR_H * 6 ** 3) / 12
+    p_cr = 3.1416 ** 2 * 2100 * i_min / st["rod_mm"] ** 2
+    f_stall = SERVO_STALL_NM / HORN_R * 1000
+    st["tie_rod_buckling_sf"] = round(p_cr / f_stall, 1)
+    assert p_cr / f_stall >= 2.0, f"tie rod buckles under servo stall: P_cr {p_cr:.0f} N vs {f_stall:.0f} N"
     # nothing overlaps anything in the assembled pose: printed parts AND the bought parts
     # (axle, kingpins, collars, motor, spur, pinion, servo, ESC, battery, wheels)
     allb = {k: v for k, v in solid.items() if k != "hex_hub_x4"}

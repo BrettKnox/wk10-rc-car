@@ -1,0 +1,780 @@
+<meta charset="utf-8">
+<title>WK-10 Design Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a drawing-set review packet. Sticky sheet index on the left, one long scroll of
+   numbered sections on the right; drawings and the model sit on "sheet" surfaces. */
+:root {
+  --paper: #eef1f3;          /* page plane */
+  --sheet: #fbfcfc;          /* drawing / panel surface */
+  --ink: #17212b;            /* primary text, object lines */
+  --ink-2: #4f5b67;          /* secondary text */
+  --rule: #d3d9de;           /* hairlines */
+  --redline: #c23b22;        /* dimensions, markups, the one accent */
+  --blue: #2f6db5;           /* links, centre lines */
+  --good: #0a7d0a;
+  --warn-bg: #fff4d6;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;   /* validated chart slots, light */
+  --g-chassis: #2a78d6; --g-front: #eb6834; --g-steering: #1baf7a; --g-rear: #4a3aa7; --g-bought: #9aa3ab;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #0f1418; --sheet: #161d23; --ink: #e3e8ec; --ink-2: #9aa7b3; --rule: #2a333b;
+  --redline: #e5694f; --blue: #6fa3e0; --good: #3fbf3f; --warn-bg: #3a3014;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  --g-chassis: #3987e5; --g-front: #d95926; --g-steering: #199e70; --g-rear: #9085e9; --g-bought: #6b7682;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #0f1418; --sheet: #161d23; --ink: #e3e8ec; --ink-2: #9aa7b3; --rule: #2a333b;
+  --redline: #e5694f; --blue: #6fa3e0; --good: #3fbf3f; --warn-bg: #3a3014;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  --g-chassis: #3987e5; --g-front: #d95926; --g-steering: #199e70; --g-rear: #9085e9; --g-bought: #6b7682;
+  color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--paper); color: var(--ink); font: 15px/1.55 var(--f-body); }
+a { color: var(--blue) }
+:focus-visible { outline: 2px solid var(--redline); outline-offset: 2px }
+.wrap { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 0; max-width: 1360px; margin: 0 auto; }
+nav.index { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start; height: 100vh; overflow-y: auto;
+  padding: 28px 18px 28px 20px; border-right: 1px solid var(--rule); }
+nav.index .brand { font: 700 22px/1 var(--f-display); letter-spacing: .02em; }
+nav.index .brand small { display: block; font: 500 11px/1.4 var(--f-mono); color: var(--ink-2); letter-spacing: .04em; margin-top: 6px; }
+nav.index ol { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 2px; }
+nav.index a { display: grid; grid-template-columns: 36px 1fr; padding: 6px 8px; border-radius: 4px; color: var(--ink); text-decoration: none; font-size: 14px; }
+nav.index a span { font: 500 12px/1.9 var(--f-mono); color: var(--ink-2); }
+nav.index a:hover, nav.index a.on { background: var(--sheet); }
+nav.index a.on span { color: var(--redline) }
+main { padding-inline: 32px; padding-block: 28px 80px; min-width: 0; }
+section { padding-block: 34px 10px; border-top: 1px solid var(--rule); scroll-margin-top: 8px; }
+section:first-of-type { border-top: 0; padding-top: 0 }
+.eyebrow { font: 500 12px/1 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--redline); }
+h1 { font: 700 44px/1.02 var(--f-display); letter-spacing: -.005em; margin: 10px 0 12px; text-wrap: balance; }
+h2 { font: 700 28px/1.1 var(--f-display); margin: 8px 0 14px; text-wrap: balance; }
+h3 { font: 600 17px/1.3 var(--f-display); letter-spacing: .02em; margin: 22px 0 8px; text-transform: uppercase; }
+p { max-width: 70ch; margin: 0 0 12px; }
+.lede { font-size: 17px; color: var(--ink-2); max-width: 72ch; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 6px; }
+.chip { font: 500 12px/1 var(--f-mono); padding: 7px 10px; border: 1px solid var(--rule); border-radius: 999px; background: var(--sheet); }
+.chip.ok::before { content: "✓ "; color: var(--good) }
+.chip.todo::before { content: "○ "; color: var(--ink-2) }
+.specs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--rule);
+  border: 1px solid var(--rule); margin: 22px 0 8px; }
+.spec { background: var(--sheet); padding: 14px 16px; }
+.spec b { display: block; font: 600 26px/1.1 var(--f-display); }
+.spec b small { font: 500 13px var(--f-mono); color: var(--ink-2); margin-left: 3px }
+.spec span { font: 500 11px/1.4 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.spec em { display: block; font-style: normal; font-size: 12.5px; color: var(--ink-2); margin-top: 4px }
+.panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); margin: 10px 0 18px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 12px/1.3 var(--f-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2); background: var(--paper); white-space: nowrap; }
+tr:last-child td { border-bottom: 0 }
+td.n, th.n { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.code { font-family: var(--f-mono); font-size: 13px; white-space: nowrap; }
+tfoot td { font-weight: 600; background: var(--paper) }
+.pass { color: var(--good); font: 600 12px var(--f-mono); white-space: nowrap }
+.pass::before { content: "✓ " }
+.todo { color: var(--ink-2); font: 500 12px var(--f-mono); white-space: nowrap }
+.todo::before { content: "○ " }
+.sev { font: 600 11px/1 var(--f-mono); padding: 4px 6px; border-radius: 3px; border: 1px solid currentColor; white-space: nowrap }
+.sev.p0 { color: var(--redline) } .sev.p1 { color: var(--s2) } .sev.p2 { color: var(--ink-2) }
+.note { border-left: 3px solid var(--redline); padding: 10px 14px; background: var(--sheet); margin: 14px 0; max-width: 78ch; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+.two > * { min-width: 0 }
+
+/* ---- 3D viewer */
+.viewer { position: relative; height: 560px; max-height: 72vh; overflow: hidden; }
+.viewer canvas { display: block; width: 100%; height: 100%; touch-action: none; border-radius: 6px; }
+.vbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 2px; }
+.vbar label { display: inline-flex; gap: 6px; align-items: center; font: 500 13px var(--f-mono); cursor: pointer; }
+.vbar .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.vbar button, .seg button { font: 500 13px var(--f-mono); padding: 7px 11px; border: 1px solid var(--rule); background: var(--sheet); color: var(--ink); border-radius: 4px; cursor: pointer; }
+.vbar button:hover, .seg button:hover { border-color: var(--ink-2) }
+.seg { display: inline-flex; gap: 0 } .seg button { border-radius: 0 } .seg button:first-child { border-radius: 4px 0 0 4px } .seg button:last-child { border-radius: 0 4px 4px 0 }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink) }
+.vbar input[type=range] { width: 130px; accent-color: var(--redline) }
+.pick { position: absolute; right: 12px; top: 12px; width: min(290px, calc(100% - 24px)); background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; font-size: 13px; }
+.pick h4 { margin: 0 0 6px; font: 600 15px var(--f-mono) }
+.pick dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0 }
+.pick dt { color: var(--ink-2); font: 500 12px var(--f-mono) }
+.pick dd { margin: 0; font-family: var(--f-mono); font-size: 12.5px }
+.vhint { position: absolute; left: 12px; bottom: 10px; font: 500 12px var(--f-mono); color: var(--ink-2); background: var(--sheet); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--rule) }
+.vfail { padding: 40px; text-align: center; color: var(--ink-2) }
+
+/* ---- drawing sheets */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 10px }
+.tabs button { font: 500 13px var(--f-mono); padding: 8px 12px; border: 1px solid var(--rule); background: var(--sheet); color: var(--ink); border-radius: 4px; cursor: pointer }
+.tabs button[aria-selected="true"] { border-color: var(--redline); color: var(--redline) }
+.sheetwrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet) }
+.sheetwrap svg { display: block; width: 100%; min-width: 860px; height: auto }
+svg.sheet .vis { fill: none; stroke: var(--ink); stroke-width: 1.05; stroke-linejoin: round }
+svg.sheet .hid { fill: none; stroke: var(--ink-2); stroke-width: .6; stroke-dasharray: 4 3 }
+svg.sheet .dim, svg.sheet .ext, svg.sheet .lead { stroke: var(--redline); stroke-width: .7; fill: none }
+svg.sheet .ext { opacity: .55 }
+svg.sheet .arr, svg.sheet .dot { fill: var(--redline) }
+svg.sheet .ctr { stroke: var(--blue); stroke-width: .6; stroke-dasharray: 14 3 2 3 }
+svg.sheet .gnd { stroke: var(--ink); stroke-width: 1.6 }
+svg.sheet .dimt { font: 500 11.5px var(--f-mono); fill: var(--redline) }
+svg.sheet .note { font: 500 11.5px var(--f-mono); fill: var(--ink) }
+svg.sheet .vlabel { font: 600 12.5px var(--f-mono); fill: var(--ink); letter-spacing: .04em }
+svg.sheet .frame, svg.sheet .tb { fill: none; stroke: var(--ink); stroke-width: 1.2 }
+svg.sheet .tbl { stroke: var(--ink); stroke-width: .8 }
+svg.sheet .tbt { font: 700 15px var(--f-display); fill: var(--ink); letter-spacing: .03em }
+svg.sheet .tbs { font: 500 9.5px var(--f-mono); fill: var(--ink-2) }
+svg.sheet .tbn { font: 600 18px var(--f-mono); fill: var(--ink) }
+
+/* ---- charts */
+.chart { padding: 14px 14px 8px; }
+.chart h4 { margin: 0 0 2px; font: 600 15px var(--f-display); letter-spacing: .02em; text-transform: uppercase }
+.chart p { font-size: 13px; color: var(--ink-2); margin: 0 0 8px }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible }
+.chart .axis text, .chart .lbl { font: 500 11px var(--f-mono); fill: var(--ink-2) }
+.chart .grid line { stroke: var(--rule); stroke-width: 1 }
+.chart .base { stroke: var(--ink-2); stroke-width: 1 }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font: 500 12px var(--f-mono); color: var(--ink-2); margin: 4px 0 6px }
+.legend i { display: inline-block; width: 16px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px }
+.tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--sheet); font: 500 12px/1.45 var(--f-mono); padding: 7px 9px; border-radius: 4px; z-index: 20; white-space: nowrap }
+.linkbtn { font: 500 12px var(--f-mono); background: none; border: 0; color: var(--blue); cursor: pointer; padding: 0; text-decoration: underline }
+pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 12px; overflow-x: auto }
+
+@media (max-width: 980px) {
+  .wrap { grid-template-columns: minmax(0, 1fr) }
+  nav.index { position: sticky; height: auto; border-right: 0; border-bottom: 1px solid var(--rule); background: var(--paper); z-index: 5; padding: 10px 16px; }
+  nav.index .brand small { display: none }
+  nav.index ol { display: flex; overflow-x: auto; margin-top: 8px; gap: 4px; padding-bottom: 4px }
+  nav.index a { display: block; white-space: nowrap; padding: 6px 9px; font-size: 13px }
+  nav.index a span { display: none }
+  main { padding-inline: 16px }
+  .specs { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  h1 { font-size: 34px }
+  .viewer { height: 420px }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important } }
+</style>
+
+<div class="wrap">
+<nav class="index" aria-label="Sections">
+  <div class="brand">WK-10<small>DESIGN REVIEW PACKET · REV D · 2026-10-12</small></div>
+  <ol id="toc">
+    <li><a href="#overview"><span>00</span>Overview</a></li>
+    <li><a href="#model"><span>01</span>3D model</a></li>
+    <li><a href="#drawings"><span>02</span>Drawings</a></li>
+    <li><a href="#decisions"><span>03</span>Layout decisions</a></li>
+    <li><a href="#analysis"><span>04</span>Analysis</a></li>
+    <li><a href="#structure"><span>05</span>Structural checks</a></li>
+    <li><a href="#fits"><span>06</span>Fits and tolerances</a></li>
+    <li><a href="#checks"><span>07</span>Automated checks</a></li>
+    <li><a href="#parts"><span>08</span>Printed parts</a></li>
+    <li><a href="#bom"><span>09</span>Bill of materials</a></li>
+    <li><a href="#electronics"><span>10</span>Electronics and firmware</a></li>
+    <li><a href="#tests"><span>11</span>Test plan</a></li>
+    <li><a href="#issues"><span>12</span>Open issues and reviews</a></li>
+    <li><a href="#questions"><span>13</span>Questions for you</a></li>
+  </ol>
+</nav>
+
+<main>
+<section id="overview">
+  <div class="eyebrow">WK10-00 · Overview</div>
+  <h1>WK-10, a printable 1/10 on-road pan car</h1>
+  <p class="lede">Rear-wheel drive, pivoting rear pod with a locked spool, sliding-pillar front suspension, and an ESP32 that drives it from a phone, a Python script or a second ESP32 used as a handheld transmitter. Every printed part is modelled parametrically in build123d and fits a 220 × 220 mm bed. It is designed and checked in CAD; nothing has been printed or run yet. This packet is for review before building.</p>
+  <div class="chips">
+    <span class="chip ok">Parametric CAD, 24 printed parts</span>
+    <span class="chip ok">Automated fit and kinematic checks</span>
+    <span class="chip ok">Firmware compiles, self-tests pass</span>
+    <span class="chip ok">3 independent code/design reviews</span>
+    <span class="chip todo">Not yet printed</span>
+    <span class="chip todo">Not yet run on hardware</span>
+  </div>
+  <div class="specs" id="specs"></div>
+  <p style="font-size:13px;color:var(--ink-2)">Performance numbers come from a first-principles vehicle model (motor Kv and resistance, gearing, rolling resistance, drag, battery C-rate, tire grip). Masses are estimates from the CAD volumes and part listings. Units are millimetres unless stated.</p>
+</section>
+
+<section id="model">
+  <div class="eyebrow">WK10-01 · 3D model</div>
+  <h2>Interactive model</h2>
+  <p>Drag to orbit, scroll or pinch to zoom, right-drag to pan. Click a part to see what it is, what it is printed from and how much it weighs. The section plane cuts the car so you can see inside the knuckles, the pod and the pan joint. Bought parts (tires, motor, gears, servo, ESC, battery, axle, kingpins, collars) are simplified envelopes.</p>
+  <div class="vbar" id="vgroups"></div>
+  <div class="panel viewer" id="viewer">
+    <div class="vhint" id="vhint">Loading 30 meshes…</div>
+    <div class="pick" id="pick" hidden></div>
+  </div>
+  <div class="vbar">
+    <span class="seg" role="group" aria-label="View">
+      <button data-view="iso" aria-pressed="true">Iso</button><button data-view="top" aria-pressed="false">Top</button><button data-view="side" aria-pressed="false">Side</button><button data-view="front" aria-pressed="false">Front</button>
+    </span>
+    <label for="explode">Explode <input type="range" id="explode" min="0" max="1" step="0.01" value="0"></label>
+    <span class="seg" role="group" aria-label="Section plane">
+      <button data-cut="none" aria-pressed="true">No section</button><button data-cut="x" aria-pressed="false">Cut X</button><button data-cut="y" aria-pressed="false">Cut Y</button>
+    </span>
+    <label for="cutpos">Position <input type="range" id="cutpos" min="-180" max="160" step="1" value="128"></label>
+    <span class="mono" id="cutval" style="font-size:12px;color:var(--ink-2)"></span>
+  </div>
+</section>
+
+<section id="drawings">
+  <div class="eyebrow">WK10-02 · Drawings</div>
+  <h2>Drawing set</h2>
+  <p>Hidden-line-removed orthographic views generated from the same parameters the parts are built from, so the dimensions cannot drift from the model. Third-angle projection, millimetres, not to scale on screen. Part sheets show hidden lines dashed. Bore sizes are as modelled, which includes a +0.2 mm allowance for printer shrink (see section 06).</p>
+  <div class="tabs" role="tablist" id="sheettabs"></div>
+  <div class="sheetwrap" id="sheet"></div>
+</section>
+
+<section id="decisions">
+  <div class="eyebrow">WK10-03 · Layout decisions</div>
+  <h2>Why it is laid out this way</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Area</th><th>Choice</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr><td>Class</td><td>1/10 on-road pan car, 257 mm wheelbase, 175 mm track</td><td>The owned tires are 1/10 on-road (67 mm, 12 mm hex). 257 mm matches the Tamiya TT-01/TT-02 and Sakura D5, so standard 190 mm bodies fit.</td></tr>
+      <tr><td>Rear</td><td>Pivoting pod, solid 5 mm axle, locked spool</td><td>Printed differentials are the most reported failure in open printable cars (PLA/PETG diffs soften, seize and click). A pod with a spool has no CV joints and one axle. It pushes a little in tight corners.</td></tr>
+      <tr><td>Front</td><td>Sliding-pillar kingpin, 3 mm stainless pin, coil spring above the knuckle, printed bump stop</td><td>Uses owned rods and springs; the classic 1/12 pan-car front end. Travel +7 / −5 mm.</td></tr>
+      <tr><td>Steering</td><td>Servo horn forward, both tie rods on one bolt 12 mm out; 14 mm knuckle arms angled about 22° outboard</td><td>Solved with a branch-tracked linkage solver: 96% Ackermann both ways. An earlier layout that looked right on paper (rearward horn, straight arms) was anti-Ackermann; the check now fails it.</td></tr>
+      <tr><td>Tie rods</td><td>Printed PETG, two halves joined by a cut M3 stud in heat-set inserts</td><td>Replaces ball links. Loose 3.6 mm eyes on M3 bolts tolerate the tilt from 7 mm of bump over a 64 mm rod. 5 mm deep bar for buckling margin.</td></tr>
+      <tr><td>Motor</td><td>3650 brushless can behind the rear axle</td><td>Ahead of the axle it collided with the pod pivot. Behind, it puts 58% of the mass on the driven wheels, which matters because launch is traction-limited.</td></tr>
+      <tr><td>Pan</td><td>Split at X = 86, joined by a block that also carries the servo</td><td>A 240 mm pan does not fit a 220 mm bed, even diagonally. The joint block does two jobs.</td></tr>
+      <tr><td>Hubs</td><td>Printed 12 mm hex hubs with an M3 set bolt on a ground flat</td><td>The owned aluminium hubs clamp with an M4 nut and need a threaded axle tip, which plain 5 mm rod does not have.</td></tr>
+      <tr><td>Control</td><td>ESP32 as its own Wi-Fi access point (phone joystick, tuning page, HTTP API) plus ESP-NOW from a second ESP32</td><td>No radio purchase. Every input goes through one failsafe and one arming gate.</td></tr>
+    </tbody></table></div>
+</section>
+
+<section id="analysis">
+  <div class="eyebrow">WK10-04 · Analysis</div>
+  <h2>Kinematics and performance</h2>
+  <div class="two">
+    <div class="panel chart" id="ch-steer"></div>
+    <div class="panel chart" id="ch-bump"></div>
+    <div class="panel chart" id="ch-gear"></div>
+    <div class="panel chart" id="ch-mass"></div>
+  </div>
+  <h3>Vehicle model, 14T pinion</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Metric</th><th class="n">Value</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Top speed</td><td class="n">52.6 km/h</td><td>3600 Kv on 2S, 6.21:1, 67 mm tires, C<sub>d</sub>A 0.0042 m²</td></tr>
+      <tr><td>0 to 30 km/h</td><td class="n">1.33 s</td><td>Traction-limited: about 8 N of rear grip against 25 N of available thrust</td></tr>
+      <tr><td>Launch</td><td class="n">0.64 g</td><td>Firmware ramps throttle at 4 full-scale per second to stay near the grip limit</td></tr>
+      <tr><td>Peak current</td><td class="n">60 A</td><td>ESC limit; the 2S 80C pack can source about 416 A</td></tr>
+      <tr><td>Motor heat, continuous</td><td class="n">18 W</td><td>Why brushless: a brushed 540 puts about 48 W into the PETG motor plate</td></tr>
+      <tr><td>Runtime at 35 A continuous</td><td class="n">8.9 min</td><td>Pessimistic; part-throttle runs last longer</td></tr>
+      <tr><td>Lateral tip-over</td><td class="n">2.92 g</td><td>CG 30 mm high on a 175 mm track: it slides long before it rolls</td></tr>
+      <tr><td>Weight split</td><td class="n">42 / 58</td><td>Front / rear, from the mass budget</td></tr>
+    </tbody></table></div>
+</section>
+
+<section id="structure">
+  <div class="eyebrow">WK10-05 · Structural checks</div>
+  <h2>Closed-form strength checks</h2>
+  <p>Hand-calculation level, not FEA: rectangular-section beam theory with material allowables that already include a knockdown for printed parts (PLA 40 MPa, PETG 40 MPa, steel 250 MPa). Round sections are converted to the square with the same second moment. Load cases are deliberately harsh (about 10 g on one corner, which is a kerb strike). Fatigue, layer-adhesion direction and creep are not modelled; those are the places your judgement is most useful.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Member</th><th>Model</th><th>Load case</th><th class="n">Stress</th><th class="n">Deflection</th><th class="n">SF</th></tr></thead>
+    <tbody>
+      <tr><td>Pan (PLA, 4 mm plate)</td><td>104 × 4 section, simply supported over 120 mm, rails ignored</td><td>40 N centre (3.3 g on the whole car)</td><td class="n">4.3 MPa</td><td class="n">0.74 mm</td><td class="n">9.2</td></tr>
+      <tr><td>Front lower arm (PETG)</td><td>20 × 6 cantilever, 23 mm</td><td>30 N at the kingpin (about 10 g on a front corner)</td><td class="n">5.8 MPa</td><td class="n">0.16 mm</td><td class="n">7.0</td></tr>
+      <tr><td>Kingpin (Ø3 stainless)</td><td>Simply supported between the arms, 41 mm span</td><td>30 N lateral at mid-span</td><td class="n">103 MPa</td><td class="n">0.05 mm</td><td class="n">2.4</td></tr>
+      <tr><td>Rear axle (Ø5 stainless)</td><td>Cantilever from the pod bearing to the wheel, 42 mm</td><td>35 N vertical at the wheel (about 10 g on a rear corner)</td><td class="n">105 MPa</td><td class="n">0.13 mm</td><td class="n">2.4</td></tr>
+      <tr><td>Tie rod (PETG)</td><td>Euler buckling, pinned-pinned, 63.8 mm, 6 × 5 bar</td><td>Servo stall push: 1.08 N·m on a 12 mm horn = 90 N</td><td class="n">P<sub>cr</sub> 318 N</td><td class="n">n/a</td><td class="n">3.5</td></tr>
+    </tbody></table></div>
+  <div class="note"><b>Found while building this packet:</b> the tie rods were first drawn with a 6 × 3 mm bar, which buckles at about 69 N, below a stalled MG996R's 90 N push. A jammed wheel could have folded one. The bar is now 5 mm deep away from the eyes (it still prints flat) and the CAD build fails if the buckling factor drops under 2.</div>
+</section>
+
+<section id="fits">
+  <div class="eyebrow">WK10-06 · Fits and tolerances</div>
+  <h2>Fits and tolerances</h2>
+  <p>FDM holes print about 0.2 mm under size on this printer class, so every bore is modelled 0.2 mm over its target. That allowance (<span class="mono">HOLE_COMP</span>) is assumed until the calibration coupon is printed and measured; it is one parameter, and the whole set regenerates from it. Untoleranced printed dimensions: ±0.2 mm.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Feature</th><th>Where</th><th class="n">Target</th><th class="n">Modelled</th><th>Fit intent</th></tr></thead>
+    <tbody id="fits-body"></tbody></table></div>
+</section>
+
+<section id="checks">
+  <div class="eyebrow">WK10-07 · Automated checks</div>
+  <h2>What the build verifies every time</h2>
+  <p>Running <span class="mono">cad/wk10.py</span> rebuilds every part and then runs these assertions; any failure stops the export. Each check was mutation-tested where it matters (for example, the old anti-Ackermann linkage now fails the steering check).</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Check</th><th>Criterion</th><th class="n">Result</th><th>Status</th></tr></thead>
+    <tbody id="checks-body"></tbody></table></div>
+  <h3>Not covered by any check</h3>
+  <p>The real rim hex depth and offset (not published; measure the rims), spring solid height, and the tie rods during bump travel. The firmware self-test proves the control maths, not the wiring or the radio.</p>
+</section>
+
+<section id="parts">
+  <div class="eyebrow">WK10-08 · Printed parts</div>
+  <h2>Printed parts</h2>
+  <p>Every part was run through a printability analyser in its slicer orientation. Supports are needed in three places only: under the pan's rear spring arm, under the pod's pivot lug, and under each knuckle's steering arm. Layer height 0.2 mm throughout. Masses are estimates (solid volume × density × an infill factor of 1.0 or 0.6).</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Part</th><th class="n">Qty</th><th>Material</th><th>Print settings</th><th class="n">Bounding box</th><th class="n">Mass</th></tr></thead>
+    <tbody id="parts-body"></tbody><tfoot id="parts-foot"></tfoot></table></div>
+</section>
+
+<section id="bom">
+  <div class="eyebrow">WK10-09 · Bill of materials</div>
+  <h2>Bill of materials</h2>
+  <h3>To buy (prices checked 2026-10-12)</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Part</th><th>Pick</th><th>Why</th><th class="n">Price</th></tr></thead>
+    <tbody>
+      <tr><td>Motor + ESC</td><td><a href="https://store.hobbyetc.com/parts/view/181393">Hobbywing QuicRun 10BL60 SD G2 + QR3650 G2</a></td><td>Only combo with a confirmed 6 V / 4 A BEC for the servo and ESP32. 3600 Kv, 36 × 52.8 mm, 3.17 mm shaft</td><td class="n">$89.99</td></tr>
+      <tr><td>2S LiPo</td><td><a href="https://www.amazon.com/dp/B08DCYVHSF">Zeee 5200 mAh 80C XT60, 2-pack</a></td><td>138 × 47 × 25 mm fits the 47.5 mm bay</td><td class="n">$35.99</td></tr>
+      <tr><td>Charger</td><td>SkyRC B6AC Neo (Amazon B0CV64ZB2L)</td><td>AC input built in</td><td class="n">$53.00</td></tr>
+      <tr><td>LiPo bag</td><td><a href="https://www.amazon.com/dp/B0FWBMK87X">Zeee 28 × 22 cm</a></td><td>Charge and store</td><td class="n">$6.29</td></tr>
+      <tr><td>Pinions</td><td>ShareGoo 48P 13T to 17T set (Amazon B09FGC6JV4)</td><td>Gearing range; 14T default</td><td class="n">$11.49</td></tr>
+      <tr><td>Spur</td><td><a href="https://www.amazon.com/dp/B0006O1QW6">Kimbrough #148 87T 48P</a></td><td>Bolt pattern unpublished; the printed clamp ring is the drill template</td><td class="n">$9.13</td></tr>
+      <tr><td>5 mm rod</td><td>304 stainless 5 × 300 mm, 5 pcs (Amazon B0D5D2H1KJ)</td><td>Rear axle 211 mm, front stubs 46 mm</td><td class="n">$8.99</td></tr>
+      <tr><td>Shaft collars</td><td>5 mm bore, 10 mm OD, 12 pcs (Amazon B0F9P5CNSL)</td><td>Wheel and axle retention</td><td class="n">$5.99</td></tr>
+      <tr><td>Battery strap</td><td>Hobbypark 20 × 200 mm, 6 pcs (Amazon B08HHHFMCJ)</td><td></td><td class="n">$6.97</td></tr>
+      <tr><td>Body</td><td><a href="https://www.amazon.com/dp/B0CDZ1FSXN">PROTOform Venturi GT</a></td><td>191 mm wide, 258 mm wheelbase, clear</td><td class="n">$29.99</td></tr>
+    </tbody>
+    <tfoot><tr><td colspan="3">Total (about $277.17 with 7.5% Duval County tax)</td><td class="n">$257.83</td></tr></tfoot></table></div>
+  <h3>Already on hand</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Part</th><th class="n">Qty</th><th>Used for</th></tr></thead>
+    <tbody>
+      <tr><td>Shaluoman 1/10 on-road foam tires on rims, 67 × 26 mm, 12 mm hex</td><td class="n">4</td><td>Wheels</td></tr>
+      <tr><td>Deegoo MG996R metal-gear servo (1.08 N·m at 6 V, listing)</td><td class="n">1</td><td>Steering</td></tr>
+      <tr><td>ESP32 dev boards</td><td class="n">2</td><td>Car controller, optional handheld transmitter</td></tr>
+      <tr><td>685ZZ bearings (5 × 11 × 5)</td><td class="n">6</td><td>2 per knuckle, 1 per pod plate</td></tr>
+      <tr><td>3 mm × 300 mm 304 stainless rod</td><td class="n">1</td><td>Two 47 mm kingpins</td></tr>
+      <tr><td>304 stainless compression springs (kit)</td><td class="n">3</td><td>Kingpin springs; rear pod spring (27 mm+ free, about 3 N/mm)</td></tr>
+      <tr><td>M4 shoulder bolts, 5 × 10 mm shoulder</td><td class="n">2</td><td>Pod pivot</td></tr>
+      <tr><td>Brass heat-set inserts, M3 and M4</td><td class="n">~42</td><td>Every printed joint</td></tr>
+      <tr><td>M3 screws and nuts (12.9 kit)</td><td class="n">~60</td><td>Structure, spur clamp, tie-rod studs</td></tr>
+      <tr><td>PETG / PLA filament</td><td class="n">~100 g / ~150 g</td><td>Load-bearing and hot parts PETG; pan and trays PLA</td></tr>
+      <tr><td>XT60 pigtails, 14 AWG silicone wire, resistors, 6 V bench supply</td><td class="n">n/a</td><td>Wiring, battery divider, transmitter pots, bring-up</td></tr>
+    </tbody></table></div>
+</section>
+
+<section id="electronics">
+  <div class="eyebrow">WK10-10 · Electronics and firmware</div>
+  <h2>Electronics and control</h2>
+  <div class="two">
+    <div>
+      <pre class="mermaid">
+flowchart LR
+  B[2S LiPo 7.4 V] -- XT60 14 AWG --> E[ESC 10BL60]
+  E -- 3 phase + sensor --> M[QR3650 motor]
+  E -- BEC 6 V --> S[MG996R servo]
+  E -- BEC 6 V to VIN --> R[ESP32 car]
+  R -- GPIO18 --> S
+  R -- GPIO19 --> E
+  P[Phone or PC] -. Wi-Fi .-> R
+  T[ESP32 handheld] -. ESP-NOW .-> R
+      </pre>
+    </div>
+    <div class="tablewrap" style="margin-top:0"><table>
+      <thead><tr><th>Signal</th><th>Pin</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>Steering servo</td><td class="code">GPIO18</td><td>LEDC 50 Hz, 16-bit, 1000 to 2000 µs</td></tr>
+        <tr><td>ESC throttle</td><td class="code">GPIO19</td><td>Same timer; cut to 0 V by the watchdog ISR on a stall</td></tr>
+        <tr><td>Battery sense</td><td class="code">GPIO34</td><td>Optional 30k / 10k divider, ADC1</td></tr>
+        <tr><td>Status LED</td><td class="code">GPIO2</td><td>Link, armed, failsafe and calibration patterns</td></tr>
+        <tr><td>Handheld pots</td><td class="code">GPIO34/35</td><td>3V3 → 4.7k → 10k pot → 2.2k → GND, about 0.43 to 2.38 V</td></tr>
+        <tr><td>Handheld dead-man</td><td class="code">GPIO27</td><td>Pull-up; a broken wire reads released</td></tr>
+      </tbody></table></div>
+  </div>
+  <h3>Safety model</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Mechanism</th><th>Behaviour</th></tr></thead>
+    <tbody>
+      <tr><td>Single writer</td><td>A 100 Hz control task (priority 10, core 1) is the only code that sets the servo and ESC pulses. The web server and OTA, which can block for seconds, only hand it commands under a spinlock.</td></tr>
+      <tr><td>Failsafe</td><td>No valid command for 250 ms (configurable 100 to 500 ms) gives neutral throttle and centre steering. Pulses keep running so the ESC sees neutral, not a frozen value.</td></tr>
+      <tr><td>Arming gate</td><td>Throttle passes only after the dead-man has been seen released on the current source since boot, since the last failsafe and since the last source change. A brownout reboot with the trigger held does not launch the car.</td></tr>
+      <tr><td>Watchdog</td><td>If the control task stalls for 300 ms, the watchdog interrupt detaches GPIO19 and holds it low before the chip resets, so the ESC drops to its own signal-loss failsafe.</td></tr>
+      <tr><td>Limits</td><td>Forward power capped at 50% until raised; reverse capped at half; throttle slew 4 full-scale/s; low-pack limp mode at 3.4 V per cell (with the divider).</td></tr>
+      <tr><td>ESC calibration</td><td>A 30 s phone-only mode sends true 1000 to 2000 µs end points; it ends if the phone loses control. Without it the ESC would learn the 50% cap as full power.</td></tr>
+      <tr><td>Inputs</td><td>Every setting is range-checked on the car; transmitter packets need the bound MAC, a checksum and a rising sequence number; settings and OTA are refused unless the car is parked.</td></tr>
+      <tr><td>Verification</td><td>Both sketches compile (car 77% of flash). The control maths self-test runs at boot and on the PC; three deliberately broken copies of it fail. The Python client is tested against a fake car.</td></tr>
+    </tbody></table></div>
+</section>
+
+<section id="tests">
+  <div class="eyebrow">WK10-11 · Test plan</div>
+  <h2>Bench and track tests</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Test</th><th>Pass criterion</th><th>Prediction</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Host self-test</td><td>All control-maths checks pass</td><td>n/a</td><td><span class="pass">pass 2026-10-12</span></td></tr>
+      <tr><td>Python client vs fake car</td><td>Arms, aborts on disarm, refuses calibration, always stops</td><td>n/a</td><td><span class="pass">pass 2026-10-12</span></td></tr>
+      <tr><td>Calibration coupon</td><td>685ZZ light press in the 11.2 hole; set HOLE_COMP</td><td>11.0 printed</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>Failsafe</td><td>Motor stops within 250 ms on finger up, Wi-Fi off, script killed, ESP32 reset while held, transmitter unplugged; no restart until released and pressed</td><td>≤ 250 ms</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>Steering</td><td>No servo buzz at lock; no wheel contact at lock with the suspension compressed</td><td>35° servo for 28° lock</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>Rear ride height</td><td>Pan rear edge 5 mm off a flat table, car on its wheels with battery</td><td>9 N on the spring</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>Heat, 5 minute run</td><td>Motor and motor plate under 60 °C, ESC under 70 °C</td><td>18 W motor heat</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>Top speed</td><td>Timed 20 m pass</td><td>52.6 km/h on 14T</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>Runtime</td><td>Minutes to the ESC low-voltage cutoff</td><td>≥ 8.9 min</td><td><span class="todo">to do</span></td></tr>
+    </tbody></table></div>
+</section>
+
+<section id="issues">
+  <div class="eyebrow">WK10-12 · Open issues and reviews</div>
+  <h2>Known gaps</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Issue</th><th>Impact</th><th>Plan</th></tr></thead>
+    <tbody>
+      <tr><td>Rim hex depth and offset not published</td><td>Hub and collar stack-up at each wheel is unverified</td><td>Measure a rim; adjust hub collar length</td></tr>
+      <tr><td>Listing dimensions (servo ears 49.5 / 26.5, horn height 56, spur thickness 6, motor holes 25)</td><td>Mounting holes may be off by a millimetre or two</td><td>Measure on arrival; each is one parameter</td></tr>
+      <tr><td>HOLE_COMP = 0.2 mm assumed</td><td>Bearing and pin fits may be loose or tight</td><td>Print the coupon first</td></tr>
+      <tr><td>Bump steer 1.47° toe-out at full 7 mm bump</td><td>Some darting over bumps</td><td>Inherent to sliding pillar with a central servo; travel is short on smooth pavement</td></tr>
+      <tr><td>No dampers (spring friction only, front and rear)</td><td>Pitch and bounce oscillation on rough ground</td><td>Grease on the kingpins; oil damper on the pod later</td></tr>
+      <tr><td>Locked rear axle</td><td>Push in tight corners</td><td>v2: bought steel 1/10 gear diff in place of the spool</td></tr>
+      <tr><td>Rear spring rate unknown until chosen</td><td>Ride height and pod bottoming</td><td>27 mm+ free, about 3 N/mm; set height with printed shims; CAD proves 1.3 mm clearance at 4° swing</td></tr>
+      <tr><td>ESP-NOW packets unencrypted</td><td>A determined spoofer could drive it</td><td>MAC binding and sequence numbers stop accidents and replays only</td></tr>
+      <tr><td>Firmware not run on hardware</td><td>Timing and radio behaviour unproven</td><td>Bench bring-up with wheels off the ground</td></tr>
+    </tbody></table></div>
+  <h2 style="margin-top:28px">Review log</h2>
+  <p>The design was reviewed three times by an independent agent that read the code and model without the author's notes, plus once more while this packet was assembled. Every finding below was fixed and is covered by a check where one is possible.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Round</th><th>Severity</th><th>Finding</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><span class="sev p0">P0</span></td><td>Failsafe ran in the same loop as the web server, which can block for 5 s while the ESC holds its last pulse</td><td>Dedicated control task, sole pulse writer</td></tr>
+      <tr><td>1</td><td><span class="sev p0">P0</span></td><td>No neutral re-arm after reboot, failsafe or source change; stale web command could resume driving</td><td>Arming gate, tested at boot</td></tr>
+      <tr><td>1</td><td><span class="sev p0">P0</span></td><td>User-tunable neutral could differ from the pulse the ESC armed on (creep)</td><td>Neutral fixed at boot, range ±30 µs</td></tr>
+      <tr><td>1</td><td><span class="sev p1">P1</span></td><td>Steering check took absolute values and reported an anti-Ackermann linkage as 88%</td><td>New linkage (96%), branch-tracked solver, sign check</td></tr>
+      <tr><td>1</td><td><span class="sev p1">P1</span></td><td>Unassemblable CAD: blind pod-plate holes, inserts breaking through 5 mm walls, inserts inside the servo pocket, pivot bolt blocked, spring arm cut off by the pan split, axle float</td><td>Side-bolted floor rails, thicker bases, moved bolts, collars and shims</td></tr>
+      <tr><td>2</td><td><span class="sev p0">P0</span></td><td>ESC calibration with the firmware's 50% cap active would teach the ESC that 50% is full power</td><td>Phone-only calibration mode with true end points</td></tr>
+      <tr><td>2</td><td><span class="sev p1">P1</span></td><td>Rear spring could not hold ride height (pan near the ground); pivot clamped solid; knuckle print orientation stood on 3.5 mm²</td><td>Spring spec + shims + ground check; 0.3 mm float; corrected orientation (102 mm²)</td></tr>
+      <tr><td>3</td><td><span class="sev p1">P1</span></td><td>Watchdog reset slower than stated (core dump); OTA flash erase could trip it; calibration could reactivate after 24.9 days uptime</td><td>Watchdog ISR cuts the ESC pin; relaxed timeout during flash writes; calibration clears on expiry</td></tr>
+      <tr><td>Packet</td><td><span class="sev p1">P1</span></td><td>Tie rod 6 × 3 mm bar buckles at about 69 N, below the servo's 90 N stall push</td><td>5 mm deep bar, SF 3.5, build-time check</td></tr>
+    </tbody></table></div>
+</section>
+
+<section id="questions">
+  <div class="eyebrow">WK10-13 · Questions for you</div>
+  <h2>Where a mechanical engineer's eye helps most</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>#</th><th>Question</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>Knuckles print with the axle bore vertical, so wheel loads bend the housing across layer lines. Is 100% infill PETG enough there, or should the bearing housing get a different orientation or a metal sleeve?</td></tr>
+      <tr><td class="n">2</td><td>The motor plate is PETG at up to about 60 °C with an M3-clamped motor. How worried should I be about creep loosening the gear mesh over a few runs?</td></tr>
+      <tr><td class="n">3</td><td>The sliding pillar runs a PETG knuckle (3.5 mm bore) on a 3 mm stainless pin with grease. Stiction and wear: acceptable, or bush it with brass tube?</td></tr>
+      <tr><td class="n">4</td><td>The kingpin and rear axle sit at a safety factor of about 2.4 for a 10 g corner strike. Is that load case realistic for a 1.2 kg car hitting a kerb at 50 km/h?</td></tr>
+      <tr><td class="n">5</td><td>The pan is split at X = 86 and spliced by an 8 mm block with 8 M3 screws. Does the joint need more length, or will the side rails carry the bending?</td></tr>
+      <tr><td class="n">6</td><td>The rear pod has one coil spring and no damper. Is a printed friction damper or an oil damper worth adding before the first run?</td></tr>
+      <tr><td class="n">7</td><td>Anything on the drawings you would dimension, tolerance or datum differently for a part that comes off an FDM printer?</td></tr>
+    </tbody></table></div>
+  <p style="margin-top:14px">The CAD source, STEP files, print-ready STLs and these drawings come as a separate zip from Brett. The whole model regenerates from one Python file, so any change you suggest can be re-checked in about a minute.</p>
+</section>
+</main>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script id="wkdata" type="application/json">{{DATA}}</script>
+<script id="wksheets" type="application/json">{{SHEETS}}</script>
+<script>
+const D = JSON.parse(document.getElementById('wkdata').textContent);
+const SHEETS = JSON.parse(document.getElementById('wksheets').textContent);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const el = (t, a = {}, h = '') => { const e = document.createElement(t); for (const k in a) e.setAttribute(k, a[k]); e.innerHTML = h; return e; };
+const fmt = (v, d = 1) => Number(v).toFixed(d);
+
+// ---------- key specs
+const totalPrinted = D.parts.reduce((s, p) => s + p.mass_g * p.qty, 0);
+const st = D.steering;
+const specs = [
+  ['Wheelbase / track', '257 / 175', 'mm', 'TT-02 class, 190 mm bodies fit'],
+  ['Overall L × W × H', '337 × 211 × 95', 'mm', 'W over the axle collars; H to body posts'],
+  ['Mass (estimate)', (D.masses.reduce((s, m) => s + m.g, 0) / 1000).toFixed(2), 'kg', 'CG X −21, Z 29 mm, 58% rear'],
+  ['Top speed', '52.6', 'km/h', '14T / 87T, 6.21:1, 3600 Kv on 2S'],
+  ['Steering', st.left.ackermann_pct + '%', 'Ackermann', st.left.servo_deg + '° servo for 28° lock'],
+  ['Suspension travel', '+7 / −5', 'mm', 'Front sliding pillar; rear pod ±4°'],
+  ['Printed parts', Math.round(totalPrinted), 'g', 'PLA chassis, PETG for load and heat'],
+  ['Parts to buy', '$258', 'USD', 'About $277 with tax'],
+];
+document.getElementById('specs').innerHTML = specs.map(([k, v, u, n]) =>
+  `<div class="spec"><span>${k}</span><b>${v}<small>${u}</small></b><em>${n}</em></div>`).join('');
+
+// ---------- fits
+const fits = [
+  ['685ZZ bearing seat', 'Knuckles (2 each), pod plates', '11.00', '11.20', 'Light press; CA if loose'],
+  ['Kingpin press', 'Lower arms, upper arms', '3.00', '3.00', 'Prints ~2.8; drill to 3.0 for a press'],
+  ['Kingpin slide', 'Knuckle barrel, bump stop', '3.30', '3.50', 'Running clearance on Ø3 pin, greased'],
+  ['Hub bore', 'Hex hubs on Ø5 axle', '5.15', '5.35', 'Slip fit, M3 set bolt on a 0.5 mm flat'],
+  ['Spool D-bore', 'Spool on Ø5 axle', '5.15 / flat 2.10', '5.35 / flat 2.20', 'Keys on the axle flat, slides 100 mm'],
+  ['M3 heat-set pilot', 'All inserts', '4.00 × 6.3', '4.20 × 6.3', 'Per insert maker; walls ≥ 1.7 mm'],
+  ['M4 heat-set pilot', 'Pod pivot lug', '5.40', '5.60', 'Shoulder-bolt pivot'],
+  ['M3 clearance', 'All bolted joints', '3.20', '3.40', 'Clearance'],
+  ['Pivot shoulder', 'Pan lugs on Ø5 shoulder', '5.15', '5.35', 'Running fit; 0.3 mm side float each way'],
+  ['Spur centre', 'Drilled spur on Ø12 spool hub', '12.2 drilled', 'n/a', 'Clamped between flange and ring, 3 × M3'],
+  ['Race shim', 'Collars and hubs against 685 inner race', 'Ø6.5 / Ø5.5 × 1', '6.5 / 5.5', 'Clears the bearing shield'],
+  ['Gear mesh', '14T / 87T 48P (m 0.529)', '26.723 C-C', '26.72', 'Slotted ±1.5 mm, set with paper'],
+];
+document.getElementById('fits-body').innerHTML = fits.map(r =>
+  `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="n">${r[2]}</td><td class="n">${r[3]}</td><td>${r[4]}</td></tr>`).join('');
+
+// ---------- checks
+const checks = [
+  ['No overlaps, assembled pose', 'Every printed and bought part pair < 0.01 mm³', '0 overlaps'],
+  ['Steering sweep', 'Wheel + knuckle at ±28° clear the chassis', '3.3 mm'],
+  ['Front travel', '+7 / −5 mm at straight and full lock', '1.5 mm'],
+  ['Tie rods at lock', 'Real rod geometry vs chassis, servo, knuckle, wheels', '4.2 mm'],
+  ['Ackermann', '70 to 130% both directions', st.left.ackermann_pct + '% / ' + st.right.ackermann_pct + '%'],
+  ['Servo throw for 28° lock', '25 to 45°', st.left.servo_deg + '°'],
+  ['Transmission angle', '≥ 40° (no toggle)', st.left.min_transmission_deg + '°'],
+  ['Both wheels steer the same way', 'Sign check over the whole sweep', 'yes'],
+  ['Bump steer', '< 0.5° per 3 mm and < 1.6° at full travel', st.bump_steer_deg_per_3mm + '° / ' + st.bump_steer_deg_full + '°'],
+  ['Tie rod buckling', 'Euler P_cr ≥ 2 × servo stall push', 'SF 3.5'],
+  ['Rear pod swing', '±4° clears the pan (lugs excluded)', '1.1 mm'],
+  ['Pivot float', '≥ 0.25 mm each side', '0.3 mm'],
+  ['Ground clearance at pod swing', 'Pan rear edge > 1 mm off the ground at 4°', '1.3 mm'],
+  ['Motor and spur height', 'Spur > 6 mm off the ground; motor clear of axle', '10.5 mm'],
+  ['Bed fit', 'Every part fits 220 × 220 × 250 in its print pose', 'all 24'],
+  ['Solid validity', 'Every part is a valid closed solid', 'all 24'],
+];
+document.getElementById('checks-body').innerHTML = checks.map(r =>
+  `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="n">${r[2]}</td><td><span class="pass">pass</span></td></tr>`).join('');
+
+// ---------- parts
+const pretty = n => n.replace(/_x\d$/, '').replace(/_/g, ' ');
+const rows = D.parts.map(p => `<tr><td class="code">${pretty(p.name)}</td><td class="n">${p.qty}</td><td>${p.material}</td><td>${p.note.replace(/^(PETG|PLA)( or PLA)?,?\s*/, '')}</td><td class="n">${p.bbox.join(' × ')}</td><td class="n">${fmt(p.mass_g * p.qty)} g</td></tr>`);
+document.getElementById('parts-body').innerHTML = rows.join('');
+const petg = D.parts.filter(p => p.material === 'PETG').reduce((s, p) => s + p.mass_g * p.qty, 0);
+document.getElementById('parts-foot').innerHTML = `<tr><td colspan="5">Total printed (PETG ${Math.round(petg)} g, PLA ${Math.round(totalPrinted - petg)} g)</td><td class="n">${Math.round(totalPrinted)} g</td></tr>`;
+
+// ---------- drawing tabs
+const tabs = document.getElementById('sheettabs'), sheetBox = document.getElementById('sheet');
+const names = { '01': 'General arrangement', '02': 'Front suspension + steering', '03': 'Rear pod + drivetrain', '04': 'Knuckle detail', '05': 'Spool, clamp, hub' };
+function showSheet(k) {
+  sheetBox.innerHTML = SHEETS[k];
+  [...tabs.children].forEach(b => b.setAttribute('aria-selected', String(b.dataset.k === k)));
+}
+Object.keys(SHEETS).sort().forEach(k => {
+  const b = el('button', { role: 'tab', 'data-k': k, 'aria-selected': 'false' }, `WK10-${k} · ${names[k]}`);
+  b.onclick = () => showSheet(k);
+  tabs.appendChild(b);
+});
+showSheet('01');
+
+// ---------- charts (inline SVG, one scale per chart)
+const tip = document.getElementById('tip');
+function showTip(e, html) { tip.innerHTML = html; tip.hidden = false; tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; }
+function hideTip() { tip.hidden = true; }
+function scale(d0, d1, r0, r1) { return v => r0 + (v - d0) / (d1 - d0) * (r1 - r0); }
+function ticks(a, b, step) { const t = []; for (let v = Math.ceil(a / step) * step; v <= b + 1e-9; v += step) t.push(+v.toFixed(6)); return t; }
+
+function lineChart(id, o) {
+  const box = document.getElementById(id);
+  const W = 520, H = 290, m = { l: 44, r: 78, t: 12, b: 36 };
+  const x = scale(o.x[0], o.x[1], m.l, W - m.r), y = scale(o.y[0], o.y[1], H - m.b, m.t);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.title}"><g class="grid">`;
+  ticks(o.y[0], o.y[1], o.ystep).forEach(v => s += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}"/>`);
+  s += `</g><g class="axis">`;
+  ticks(o.y[0], o.y[1], o.ystep).forEach(v => s += `<text x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`);
+  ticks(o.x[0], o.x[1], o.xstep).forEach(v => s += `<text x="${x(v)}" y="${H - m.b + 18}" text-anchor="middle">${v}</text>`);
+  s += `<text x="${(m.l + W - m.r) / 2}" y="${H - 4}" text-anchor="middle">${o.xlab}</text>`;
+  s += `<text x="12" y="${(m.t + H - m.b) / 2}" text-anchor="middle" transform="rotate(-90 12 ${(m.t + H - m.b) / 2})">${o.ylab}</text></g>`;
+  if (o.zero) s += `<line class="base" x1="${m.l}" x2="${W - m.r}" y1="${y(0)}" y2="${y(0)}"/>`;
+  o.series.forEach(se => {
+    const pts = o.rows.map(r => `${x(r[o.xk])},${y(r[se.k])}`).join(' ');
+    s += `<polyline fill="none" stroke="${css(se.c)}" stroke-width="2" stroke-linejoin="round" ${se.dash ? 'stroke-dasharray="6 4"' : ''} points="${pts}"/>`;
+    const last = o.rows[o.rows.length - 1];
+    s += `<circle cx="${x(last[o.xk])}" cy="${y(last[se.k])}" r="4" fill="${css(se.c)}" stroke="${css('--sheet')}" stroke-width="2"/>`;
+    s += `<text class="lbl" x="${x(last[o.xk]) + 8}" y="${y(last[se.k]) + 4 + (se.dy || 0)}">${se.name}</text>`;
+  });
+  s += `<line id="${id}-x" x1="0" x2="0" y1="${m.t}" y2="${H - m.b}" stroke="${css('--ink-2')}" stroke-width="1" visibility="hidden"/>`;
+  s += `<rect x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent" class="hit"/></svg>`;
+  box.innerHTML = `<h4>${o.title}</h4><p>${o.sub}</p>` +
+    (o.series.length > 1 ? `<div class="legend">${o.series.map(se => `<span><i style="background:${css(se.c)}"></i>${se.name}</span>`).join('')}</div>` : '') +
+    s + `<button class="linkbtn" type="button">Show the numbers</button><div hidden></div>`;
+  const svg = box.querySelector('svg'), cross = box.querySelector(`#${id}-x`);
+  svg.querySelector('.hit').addEventListener('pointermove', e => {
+    const r = svg.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * W;
+    let best = o.rows[0];
+    o.rows.forEach(row => { if (Math.abs(x(row[o.xk]) - px) < Math.abs(x(best[o.xk]) - px)) best = row; });
+    cross.setAttribute('x1', x(best[o.xk])); cross.setAttribute('x2', x(best[o.xk])); cross.setAttribute('visibility', 'visible');
+    showTip(e, `${o.xlab}: ${best[o.xk]}<br>` + o.series.map(se => `${se.name}: ${fmt(best[se.k], 2)}${o.unit}`).join('<br>'));
+  });
+  svg.querySelector('.hit').addEventListener('pointerleave', () => { hideTip(); cross.setAttribute('visibility', 'hidden'); });
+  const btn = box.querySelector('.linkbtn'), tbl = btn.nextElementSibling;
+  btn.onclick = () => {
+    tbl.hidden = !tbl.hidden; btn.textContent = tbl.hidden ? 'Show the numbers' : 'Hide the numbers';
+    tbl.innerHTML = `<div class="tablewrap"><table><thead><tr><th class="n">${o.xlab}</th>${o.series.map(se => `<th class="n">${se.name}</th>`).join('')}</tr></thead><tbody>` +
+      o.rows.map(r => `<tr><td class="n">${r[o.xk]}</td>${o.series.map(se => `<td class="n">${fmt(r[se.k], 2)}</td>`).join('')}</tr>`).join('') + `</tbody></table></div>`;
+  };
+}
+
+function barChart(id, o) {
+  const box = document.getElementById(id);
+  const W = 520, rowH = 30, m = { l: o.lw || 150, r: 70, t: 6, b: 26 };
+  const H = m.t + m.b + rowH * o.rows.length;
+  const x = scale(0, o.max, m.l, W - m.r);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.title}"><g class="grid">`;
+  ticks(0, o.max, o.step).forEach(v => s += `<line x1="${x(v)}" x2="${x(v)}" y1="${m.t}" y2="${H - m.b}"/>`);
+  s += `</g><g class="axis">`;
+  ticks(0, o.max, o.step).forEach(v => s += `<text x="${x(v)}" y="${H - 8}" text-anchor="middle">${v}</text>`);
+  s += `</g>`;
+  o.rows.forEach((r, i) => {
+    const yy = m.t + i * rowH + 5, w = x(r.v) - m.l, hi = r.hi;
+    s += `<text class="lbl" x="${m.l - 8}" y="${yy + 14}" text-anchor="end">${r.k}</text>`;
+    s += `<path d="M${m.l} ${yy} h${w - 4} a4 4 0 0 1 4 4 v12 a4 4 0 0 1 -4 4 h${-(w - 4)} z" fill="${css(hi ? '--s2' : '--s1')}" data-i="${i}"/>`;
+    s += `<text class="lbl" x="${m.l + w + 6}" y="${yy + 14}">${r.t}</text>`;
+  });
+  s += `<line class="base" x1="${m.l}" x2="${m.l}" y1="${m.t}" y2="${H - m.b}"/></svg>`;
+  box.innerHTML = `<h4>${o.title}</h4><p>${o.sub}</p>${s}`;
+  box.querySelectorAll('path[data-i]').forEach(p => {
+    p.addEventListener('pointermove', e => showTip(e, o.rows[+p.dataset.i].tip));
+    p.addEventListener('pointerleave', hideTip);
+  });
+}
+
+function drawCharts() {
+  lineChart('ch-steer', { title: 'Steering kinematics', sub: 'Wheel angle against servo angle. The outer wheel tracks the ideal Ackermann angle for the inner wheel within 0.2° at lock.',
+    rows: D.sweep, xk: 'servo', x: [0, 36], y: [0, 30], xstep: 6, ystep: 5, xlab: 'servo (°)', ylab: 'wheel angle (°)', unit: '°',
+    series: [{ k: 'inner', name: 'inner', c: '--s1', dy: -4 }, { k: 'outer', name: 'outer', c: '--s2', dy: 8 }, { k: 'ideal', name: 'ideal outer', c: '--s3', dash: true, dy: 20 }] });
+  lineChart('ch-bump', { title: 'Bump steer', sub: 'Left wheel steer angle against suspension travel (+ is bump). Positive is toe-out; it grows with the square of travel.',
+    rows: D.bump, xk: 'dz', x: [-5, 7], y: [0, 1.6], xstep: 1, ystep: 0.4, xlab: 'travel (mm)', ylab: 'toe-out (°)', unit: '°', zero: true,
+    series: [{ k: 'toe', name: 'toe-out', c: '--s1' }] });
+  barChart('ch-gear', { title: 'Top speed by pinion', sub: '87T 48P spur, 3600 Kv on 2S. Launch is traction-limited for every pinion, so 0 to 30 km/h stays at 1.33 s; taller gears only add top speed and motor heat. 14T is the default.',
+    rows: D.gearing.map(g => ({ k: `${g.pinion}T · ${g.ratio}:1`, v: g.top_kmh, t: `${g.top_kmh} km/h`, hi: g.pinion === 14, tip: `${g.pinion}T, ${g.ratio}:1<br>${g.top_kmh} km/h top speed` })),
+    max: 70, step: 10, lw: 120 });
+  const totM = D.masses.reduce((s, m) => s + m.g, 0);
+  barChart('ch-mass', { title: 'Mass budget', sub: `Estimated ${(totM / 1000).toFixed(2)} kg ready to run. CG 21 mm behind centre and 29 mm up, giving 58% on the rear.`,
+    rows: D.masses.map(m => ({ k: m.item, v: m.g, t: `${m.g} g`, tip: `${m.item}: ${m.g} g (${(m.g / totM * 100).toFixed(0)}%)` })), max: 300, step: 50, lw: 160 });
+}
+drawCharts();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawCharts);
+new MutationObserver(drawCharts).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+// ---------- section index highlight
+const links = [...document.querySelectorAll('#toc a')];
+const io = new IntersectionObserver(es => es.forEach(en => {
+  if (en.isIntersecting) links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + en.target.id));
+}), { rootMargin: '-40% 0px -55% 0px' });
+document.querySelectorAll('main section').forEach(s => io.observe(s));
+</script>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+
+const D = JSON.parse(document.getElementById('wkdata').textContent);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const host = document.getElementById('viewer'), hint = document.getElementById('vhint'), pick = document.getElementById('pick');
+const GROUPS = { chassis: 'Chassis', front: 'Front suspension', steering: 'Steering', rear: 'Rear pod', bought: 'Bought parts' };
+const EXPLODE = { chassis: [0, 0, 0], front: [60, 0, 0], steering: [30, 0, 50], rear: [-70, 0, 0], bought: [0, 0, -45] };
+const REF = { wheels: 'Shaluoman 67 × 26 mm foam tires', battery: '2S 5200 mAh hard case (138 × 47 × 25)', motor: 'QR3650 brushless, 36 × 53 mm', spur: '87T 48P spur, drilled Ø12.2', pinion: '14T 48P pinion', servo: 'MG996R servo envelope', esc: 'ESC envelope (10BL60 is 35 × 31 × 31)', rear_axle: 'Ø5 × 211 mm stainless, 0.5 mm flat', kingpins: 'Ø3 × 47 mm stainless', collars: '5 mm shaft collars' };
+
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ antialias: true }); }
+catch (e) { host.innerHTML = '<div class="vfail">This browser could not start WebGL, so the 3D model cannot show here. The drawing set below has every view.</div>'; throw e; }
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.localClippingEnabled = true;
+host.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(35, 1, 1, 5000);
+camera.up.set(0, 0, 1);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 1.6));
+const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(300, -400, 600); scene.add(sun);
+const fill = new THREE.DirectionalLight(0xffffff, 0.6); fill.position.set(-400, 300, 200); scene.add(fill);
+const plane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 128);
+const meshes = [];
+const visible = { chassis: true, front: true, steering: true, rear: true, bought: true };
+
+function theme() {
+  scene.background = new THREE.Color(css('--sheet'));
+  meshes.forEach(m => { if (!m.userData.sel) m.material.color.set(css('--g-' + m.userData.group)); });
+  render();
+}
+function size() { const r = host.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); render(); }
+let queued = false;
+function render() { if (queued) return; queued = true; requestAnimationFrame(() => { queued = false; controls.update(); renderer.render(scene, camera); }); }
+controls.addEventListener('change', render);
+new ResizeObserver(size).observe(host);
+
+const views = { iso: [380, -420, 300], top: [0, -1, 700], side: [0, -700, 40], front: [700, 0, 60] };
+function setView(v) {
+  const p = views[v]; camera.position.set(p[0], p[1], p[2]); controls.target.set(-10, 0, 30); controls.update(); render();
+  document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
+}
+document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
+
+// group toggles
+const gbar = document.getElementById('vgroups');
+Object.entries(GROUPS).forEach(([g, label]) => {
+  const id = 'g-' + g;
+  const l = document.createElement('label'); l.setAttribute('for', id);
+  l.innerHTML = `<input type="checkbox" id="${id}" checked> <span class="sw" style="background:var(--g-${g})"></span>${label}`;
+  l.querySelector('input').onchange = e => { visible[g] = e.target.checked; meshes.forEach(m => { if (m.userData.group === g) m.visible = visible[g]; }); render(); };
+  gbar.appendChild(l);
+});
+
+// explode
+document.getElementById('explode').oninput = e => {
+  const f = +e.target.value;
+  meshes.forEach(m => { const o = EXPLODE[m.userData.group]; m.position.set(o[0] * f, o[1] * f, o[2] * f); });
+  render();
+};
+// section plane
+let cut = 'none';
+const cutpos = document.getElementById('cutpos'), cutval = document.getElementById('cutval');
+function applyCut() {
+  const v = +cutpos.value;
+  if (cut === 'x') { plane.normal.set(-1, 0, 0); plane.constant = v; cutval.textContent = `X = ${v} mm (front axle 128.5, rear −128.5)`; }
+  if (cut === 'y') { plane.normal.set(0, -1, 0); plane.constant = v; cutval.textContent = `Y = ${v} mm (kingpins ±56, pod plates ±45)`; }
+  if (cut === 'none') cutval.textContent = '';
+  meshes.forEach(m => m.material.clippingPlanes = cut === 'none' ? [] : [plane]);
+  render();
+}
+document.querySelectorAll('[data-cut]').forEach(b => b.onclick = () => {
+  cut = b.dataset.cut;
+  document.querySelectorAll('[data-cut]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  if (cut === 'y') { cutpos.min = -110; cutpos.max = 110; cutpos.value = 56; }
+  if (cut === 'x') { cutpos.min = -180; cutpos.max = 160; cutpos.value = 128; }
+  applyCut();
+});
+cutpos.oninput = applyCut;
+
+// picking
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+let selected = null, downAt = null;
+renderer.domElement.addEventListener('pointerdown', e => downAt = [e.clientX, e.clientY]);
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 4) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(meshes.filter(m => m.visible)).filter(h => cut === 'none' || plane.distanceToPoint(h.point) >= 0);
+  if (selected) { selected.userData.sel = false; selected.material.color.set(css('--g-' + selected.userData.group)); selected.material.emissive.set(0x000000); }
+  selected = hits.length ? hits[0].object : null;
+  if (!selected) { pick.hidden = true; render(); return; }
+  selected.userData.sel = true; selected.material.emissive.set(css('--redline')); selected.material.emissiveIntensity = 0.35;
+  const n = selected.userData.name;
+  if (n.startsWith('ref_')) {
+    pick.innerHTML = `<h4>${n.slice(4).replace(/_/g, ' ')}</h4><dl><dt>Type</dt><dd>Bought part (envelope)</dd><dt>What</dt><dd>${REF[n.slice(4)] || ''}</dd></dl>`;
+  } else {
+    const p = D.parts.find(x => x.name === n) || {};
+    pick.innerHTML = `<h4>${n.replace(/_/g, ' ')}</h4><dl><dt>Group</dt><dd>${GROUPS[selected.userData.group]}</dd><dt>Material</dt><dd>${p.material || ''}</dd><dt>Print</dt><dd>${(p.note || '').replace(/^(PETG|PLA)( or PLA)?,?\s*/, '')}</dd><dt>Size</dt><dd>${(p.bbox || []).join(' × ')} mm</dd><dt>Mass</dt><dd>${p.mass_g ?? ''} g (est.)</dd></dl>`;
+  }
+  pick.hidden = false; render();
+});
+
+// load meshes
+const loader = new STLLoader();
+const entries = Object.entries(D.models);
+let done = 0, B64 = {};
+try { B64 = await (await fetch('models.json')).json(); } catch (e) { console.warn('models.json failed', e); }
+await Promise.all(entries.map(async ([name, group]) => {
+  try {
+    const buf = Uint8Array.from(atob(B64[name]), c => c.charCodeAt(0)).buffer;
+    const geo = loader.parse(buf); geo.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({ color: css('--g-' + group), roughness: group === 'bought' ? 0.85 : 0.55, metalness: 0.05, side: THREE.DoubleSide,
+      transparent: name === 'ref_wheels' || name === 'ref_battery', opacity: name === 'ref_wheels' ? 0.55 : name === 'ref_battery' ? 0.7 : 1 });
+    const m = new THREE.Mesh(geo, mat); m.userData = { name, group }; scene.add(m); meshes.push(m);
+  } catch (e) { console.warn('model failed', name, e); }
+  hint.textContent = `Loading ${++done} / ${entries.length} meshes…`;
+}));
+hint.textContent = meshes.length ? `${meshes.length} parts · click one for details` : 'The model files did not load.';
+setView('iso'); theme(); size();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', theme);
+new MutationObserver(theme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+</script>

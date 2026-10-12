@@ -136,7 +136,7 @@
  },
  "tie_rod_L_horn": {
   "print": "PETG, flat, 100% infill",
-  "volume_cm3": 0.8,
+  "volume_cm3": 1.0,
   "bbox_mm": [
    15.4,
    33.9,
@@ -145,7 +145,7 @@
  },
  "tie_rod_L_knuckle": {
   "print": "PETG, flat, 100% infill",
-  "volume_cm3": 0.8,
+  "volume_cm3": 1.0,
   "bbox_mm": [
    15.4,
    33.9,
@@ -154,7 +154,7 @@
  },
  "tie_rod_R_horn": {
   "print": "PETG, flat, 100% infill",
-  "volume_cm3": 0.8,
+  "volume_cm3": 1.0,
   "bbox_mm": [
    15.4,
    33.9,
@@ -163,7 +163,7 @@
  },
  "tie_rod_R_knuckle": {
   "print": "PETG, flat, 100% infill",
-  "volume_cm3": 0.8,
+  "volume_cm3": 1.0,
   "bbox_mm": [
    15.4,
    33.9,

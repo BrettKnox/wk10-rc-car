@@ -5,3 +5,8 @@ __pycache__/
 build/
 .venv/
 cad/out/print/
+review/index.html
+review/models/
+review/models.json
+review/*.zip
+review/preview.html
