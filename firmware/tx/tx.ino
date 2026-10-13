@@ -1,4 +1,6 @@
-// WK-10 transmitter: a second ESP32 dev board + two 10k pots + one tact switch.
+// WK-10 transmitter (LEGACY, optional since rev F: the hobby radio is the primary link).
+// A second ESP32 dev board + two 10k pots + one tact switch. It only drives while the radio
+// has handed the ESP32 the mux (CH3 on autonomy). Kept compiling; not part of bring-up.
 // Board: "ESP32 Dev Module", Arduino-ESP32 core 3.x. Power from a USB power bank.
 //
 // Wiring: steer pot wiper -> GPIO34, throttle pot wiper -> GPIO35.
@@ -6,6 +8,9 @@
 //         inside the range IDF calibrates well (0.15..2.45 V at 12 dB). A reading outside
 //         MV_MIN..MV_MAX (with margin), or a raw reading pinned at either rail, means a broken
 //         wire, and the TX sends stop instead of full lock or throttle.
+//         Each wiper also gets 1M to GND. GPIO34/35 have no internal pulls, so without it a
+//         broken wiper lead floats and can read mid-travel; with it the pin falls to 0 V and
+//         trips the RAW_RAIL_LO check. Loading error is under 0.5% (the wiper source is 4.2k at most).
 //         Dead-man tact switch GPIO27 -> GND (internal pull-up; a broken wire reads "released").
 //         LED on GPIO2.
 // The throttle pot has no return spring, so throttle is zero unless the dead-man is held,

@@ -161,7 +161,7 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
 
 <div class="wrap">
 <nav class="index" aria-label="Sections">
-  <div class="brand">WK-10<small>DESIGN REVIEW PACKET · REV D · 2026-10-12</small></div>
+  <div class="brand">WK-10<small>DESIGN REVIEW PACKET · REV F · 2026-10-13</small></div>
   <ol id="toc">
     <li><a href="#overview"><span>00</span>Overview</a></li>
     <li><a href="#model"><span>01</span>3D model</a></li>
@@ -184,15 +184,15 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
 <section id="overview">
   <div class="eyebrow">WK10-00 · Overview</div>
   <h1>WK-10, a printable 1/10 on-road pan car</h1>
-  <p class="lede">Rear-wheel drive, pivoting rear pod with a locked spool, sliding-pillar front suspension, and an ESP32 that drives it from a phone, a Python script or a second ESP32 used as a handheld transmitter. Every printed part is modelled parametrically in build123d and fits a 220 × 220 mm bed. It is designed and checked in CAD; nothing has been printed or run yet. This packet is for review before building.</p>
+  <p class="lede">Rear-wheel drive, pivoting rear pod on two oil coilovers with a locked spool, sliding-pillar front suspension on hardened kingpins in brass bushes, and a hobby 2.4 GHz radio as the primary control. An ESP32 behind a hardware mux adds telemetry, phone tuning and phone or Python driving, and can never stop the radio taking the car back. Every printed part is PETG, modelled parametrically in build123d and fits a 220 × 220 mm bed. Revision F answers a hostile three-reviewer pass on revision E (section 12). It is designed and checked in CAD; nothing has been printed or run yet.</p>
   <div class="chips">
-    <span class="chip ok">Parametric CAD, 25 printed parts</span>
+    <span class="chip ok">Parametric CAD, every part PETG</span>
     <span class="chip ok">Bought parts modelled from maker dimensions</span>
-    <span class="chip ok">Automated fit and kinematic checks</span>
-    <span class="chip ok">Firmware compiles, self-tests pass</span>
-    <span class="chip ok">3 independent reviews + 2 model passes</span>
-    <span class="chip todo">Not yet printed</span>
-    <span class="chip todo">Not yet run on hardware</span>
+    <span class="chip ok">Fit, kinematic and load checks on every build</span>
+    <span class="chip ok">Firmware compiles, 25/25 mutants caught</span>
+    <span class="chip ok">Rev E review: 4 P0s fixed</span>
+    <span class="chip todo">Unpublished dims marked VERIFY</span>
+    <span class="chip todo">Not yet printed or run</span>
   </div>
   <div class="specs" id="specs"></div>
   <p style="font-size:13px;color:var(--ink-2)">Performance numbers come from a first-principles vehicle model (motor Kv and resistance, gearing, rolling resistance, drag, battery C-rate, tire grip). Masses are estimates from the CAD volumes and part listings. Units are millimetres unless stated.</p>
@@ -201,7 +201,7 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
 <section id="model">
   <div class="eyebrow">WK10-01 · 3D model</div>
   <h2>Interactive model</h2>
-  <p>Drag to orbit, scroll or pinch to zoom, right-drag to pan. Click a part to see what it is. The body is drawn see-through; untick it to work on the chassis. Bought parts (tires, rims, motor, ESC, servo, ESP32 board, battery, gears, leads, body) are modelled from the makers' published dimensions, so their mounting features are real; the numbers nobody publishes (rim hex depth, motor hole pattern, the body's exact hood height) are flagged in section 12. The section plane cuts the car so you can see inside the knuckles, the pod and the ESP32 cradle.</p>
+  <p>Drag to orbit, scroll or pinch to zoom, right-drag to pan. Click a part to see what it is. The body is drawn see-through; untick it to work on the chassis. Bought parts (tires, rims, clamping hexes, motor, ESC, servo, servo saver, ball cups, shocks, foam bumper, standoffs, ESP32 board, battery, gears, coupling, body) are modelled from the makers' published dimensions; the numbers nobody publishes are marked VERIFY in the CAD and listed in section 12. The section plane cuts the car so you can see inside the knuckles, the pod and the ESP32 cradle.</p>
   <div class="vbar" id="vgroups"></div>
   <div class="panel viewer" id="viewer">
     <div class="vhint" id="vhint">Loading the model…</div>
@@ -234,17 +234,18 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
   <div class="tablewrap"><table>
     <thead><tr><th>Area</th><th>Choice</th><th>Reason</th></tr></thead>
     <tbody>
-      <tr><td>Class</td><td>1/10 on-road pan car, 257 mm wheelbase, 164 mm track, 190 mm over the tires</td><td>The owned tires are 1/10 on-road (67 mm, 12 mm hex). 257 mm and 190 mm match the 1/10 GT bodies made for 190 mm pan cars (Venturi GT, Bittydesign Ahura and P-GT3R). The first layout used a 175 mm track, 201 mm over the tires, which no 190 mm body covers. Standard 190 mm bodies fit.</td></tr>
-      <tr><td>Rear</td><td>Pivoting pod, solid 5 mm axle, locked spool</td><td>Printed differentials are the most reported failure in open printable cars (PLA/PETG diffs soften, seize and click). A pod with a spool has no CV joints and one axle. It pushes a little in tight corners.</td></tr>
-      <tr><td>Front</td><td>Sliding-pillar kingpin, 3 mm stainless pin, coil spring above the knuckle, printed bump stop</td><td>Uses owned rods and springs; the classic 1/12 pan-car front end. Travel +7 / −5 mm.</td></tr>
-      <tr><td>Steering</td><td>Servo horn forward, both tie rods on one bolt 14 mm out; 16 mm knuckle arms angled about 17° outboard</td><td>Solved with a branch-tracked linkage solver and re-solved for the 164 mm track: 98% Ackermann both ways. An earlier layout that looked right on paper (rearward horn, straight arms) was anti-Ackermann; the check now fails it.</td></tr>
-      <tr><td>Tie rods</td><td>Printed PETG, two halves joined by a cut M3 stud in heat-set inserts</td><td>Replaces ball links. Loose 3.6 mm eyes on M3 bolts tolerate the tilt from 7 mm of bump over a 57 mm rod. 5 mm deep bar for buckling margin.</td></tr>
-      <tr><td>Motor</td><td>3650 brushless can behind the rear axle</td><td>Ahead of the axle it collided with the pod pivot. Behind, it puts 58% of the mass on the driven wheels, which matters because launch is traction-limited.</td></tr>
-      <tr><td>Pan</td><td>Split at X = 86, joined by a block that also carries the servo</td><td>A 240 mm pan does not fit a 220 mm bed, even diagonally. The joint block does two jobs.</td></tr>
-      <tr><td>Hubs</td><td>Printed 12 mm hex hubs with an M3 set bolt on a ground flat</td><td>The owned aluminium hubs clamp with an M4 nut and need a threaded axle tip, which plain 5 mm rod does not have.</td></tr>
-      <tr><td>Control</td><td>ESP32 as its own Wi-Fi access point (phone joystick, tuning page, HTTP API) plus ESP-NOW from a second ESP32</td><td>No radio purchase. Every input goes through one failsafe and one arming gate.</td></tr>
-      <tr><td>Body</td><td>PROTOform Venturi GT, 190 mm polycarbonate, posts on the front end and the rear pod</td><td>Lexan is about 90 g; a printed shell of the same size would weigh twice that and crack on the first hit. Post heights are computed from the shell, so the posts end 9 mm above the skin. The rear posts move with the pod, so the rear holes are fore-aft slots.</td></tr>
-      <tr><td>ESP32 mount</td><td>Printed cradle and lid, board on end ledges, leads soldered to the pins</td><td>The DevKitC has no mounting holes and its header pins hang 8.5 mm under the board, so the old flat tray could not hold it. The lid pad stops 0.2 mm above the module shield, which captures the board without screws through it. Nothing metal sits near the PCB antenna.</td></tr>
+      <tr><td>Class</td><td>1/10 on-road pan car, 257 mm wheelbase, 164 mm track, 190 mm over the tires</td><td>The owned tires are 1/10 on-road (67 mm, 12 mm hex). 257 mm and 190 mm match the 1/10 GT bodies made for 190 mm pan cars (Venturi GT, Bittydesign Ahura and P-GT3R).</td></tr>
+      <tr><td>Control</td><td>DumboRC X6 radio + X6FG gyro receiver primary; ESP32 behind a 74HCT157 mux, select pulled down to the receiver</td><td>Frequency hopping, 10 to 20 ms latency, a sprung trigger and a receiver failsafe. A dead or booting ESP32 cannot hold the car. Rev E drove over Wi-Fi HTTP at 20 Hz and coasted about 335 m from top speed on link loss.</td></tr>
+      <tr><td>Front</td><td>Sliding pillar, hardened Ø3 kingpin in a pressed brass tube, kingpin 10.5 mm ahead of the axle</td><td>10.5 mm mechanical trail (Rev E: none) and 21 mm scrub (Rev E: 31.5). Moving the barrel forward also opened the inboard end so both bearings and a spacer press in from outboard against a lip; Rev E's inner bearing could not be installed.</td></tr>
+      <tr><td>Steering</td><td>Low-profile servo sunk through the pan, Kimbrough 25T saver, printed bar with two 5.8 mm ball studs at 20 mm, Hot Racing cups on cut M3 rods, 28 mm knuckle arms straight back</td><td>Re-solved with a branch-tracked solver and the true 3D rod length: 99% Ackermann, 37° servo for 28° lock, 66° minimum transmission angle. The MG996R horn had put the tie rods 24 mm above the knuckle arms; printed eyes gave 3.6° of toe play.</td></tr>
+      <tr><td>Rear</td><td>Pivoting pod on two M4 shoulder bolts, two 53 mm oil coilovers, locked spool on an aluminium flange coupling</td><td>Damped and symmetric (Rev E: one undamped spring to one side). A spool has no CV joints; printed diffs are the most reported failure in open printable cars. It pushes a little in tight corners.</td></tr>
+      <tr><td>Wheels</td><td>Tamiya 53823 aluminium clamping hexes on hardened Ø5 shafts</td><td>Printed hexes with one set bolt were the weakest drive link in Rev E.</td></tr>
+      <tr><td>Crash structure</td><td>Foam bumper 10 mm ahead of the tire nose on a printed plate; gear cover; battery forward stop</td><td>Rev E's tires were the bumper.</td></tr>
+      <tr><td>Motor</td><td>3650 brushless can behind the rear axle</td><td>Puts the mass on the driven wheels, which matters because launch is traction-limited.</td></tr>
+      <tr><td>Pan</td><td>Split at X = 86, joined by a block that also carries the servo</td><td>A 240 mm pan does not fit a 220 mm bed, even diagonally.</td></tr>
+      <tr><td>Body</td><td>PROTOform Venturi GT on four aluminium standoffs, all on the pan</td><td>About 90 g. Post tops are computed from the shell (skin + 9 mm). Rev E's rear posts rode the pod and turned the body into a pitch spring.</td></tr>
+      <tr><td>Material</td><td>PETG for every printed part</td><td>PLA softens at 55 to 60 °C, below a parked car's interior in a Florida summer.</td></tr>
+      <tr><td>ESP32 mount</td><td>Printed cradle and lid, board on end ledges, leads soldered</td><td>The DevKitC has no mounting holes and its header pins hang 8.5 mm under the board. Nothing metal sits near the PCB antenna.</td></tr>
     </tbody></table></div>
 </section>
 
@@ -262,8 +263,8 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
     <thead><tr><th>Metric</th><th class="n">Value</th><th>Note</th></tr></thead>
     <tbody>
       <tr><td>Top speed</td><td class="n">52.6 km/h</td><td>3600 Kv on 2S, 6.21:1, 67 mm tires, C<sub>d</sub>A 0.0042 m²</td></tr>
-      <tr><td>0 to 30 km/h</td><td class="n">1.38 s</td><td>Traction-limited: about 7.7 N of rear grip (56% of 1.23 kg on the rear) against 25 N of available thrust</td></tr>
-      <tr><td>Launch</td><td class="n">0.62 g</td><td>Firmware ramps throttle at 4 full-scale per second to stay near the grip limit</td></tr>
+      <tr><td>0 to 30 km/h</td><td class="n">1.41 s</td><td>Traction-limited: about 8 N of rear grip (55% of 1.33 kg on the rear) against 25 N of available thrust</td></tr>
+      <tr><td>Launch</td><td class="n">0.61 g</td><td>Tame it with the radio's throttle curve or the ESC punch setting</td></tr>
       <tr><td>Peak current</td><td class="n">60 A</td><td>ESC limit; the 2S 80C pack can source about 416 A</td></tr>
       <tr><td>Motor heat, continuous</td><td class="n">24.5 W</td><td>Why brushless: a brushed 540 would put about twice that into the PETG motor plate</td></tr>
       <tr><td>Runtime at 35 A continuous</td><td class="n">8.9 min</td><td>Pessimistic; part-throttle runs last longer</td></tr>
@@ -275,17 +276,17 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
 <section id="structure">
   <div class="eyebrow">WK10-05 · Structural checks</div>
   <h2>Closed-form strength checks</h2>
-  <p>Hand-calculation level, not FEA: rectangular-section beam theory with material allowables that already include a knockdown for printed parts (PLA 40 MPa, PETG 40 MPa, steel 250 MPa). Round sections are converted to the square with the same second moment. Load cases are deliberately harsh (about 10 g on one corner, which is a kerb strike). Fatigue, layer-adhesion direction and creep are not modelled; those are the places your judgement is most useful.</p>
+  <p>Hand-calculation level, not FEA, run by <span class="mono">load_cases()</span> on every build; the build fails below each floor. Allowables already include a knockdown for printed parts: PETG 40 MPa, hardened pin 1000 MPa, set-screw shear 500 MPa. Load cases are deliberately harsh (10 g on a corner is a kerb strike; servo stall is a jammed wheel). Fatigue, layer-adhesion direction and creep are not modelled; those are where your judgement is most useful.</p>
   <div class="tablewrap"><table>
-    <thead><tr><th>Member</th><th>Model</th><th>Load case</th><th class="n">Stress</th><th class="n">Deflection</th><th class="n">SF</th></tr></thead>
+    <thead><tr><th>Member</th><th>Model</th><th>Load case</th><th class="n">Result</th><th class="n">Floor</th></tr></thead>
     <tbody>
-      <tr><td>Pan (PLA, 4 mm plate)</td><td>104 × 4 section, simply supported over 120 mm, rails ignored</td><td>40 N centre (3.3 g on the whole car)</td><td class="n">4.3 MPa</td><td class="n">0.74 mm</td><td class="n">9.2</td></tr>
-      <tr><td>Front lower arm (PETG)</td><td>20 × 6 cantilever, 23 mm</td><td>30 N at the kingpin (about 10 g on a front corner)</td><td class="n">5.8 MPa</td><td class="n">0.16 mm</td><td class="n">7.0</td></tr>
-      <tr><td>Kingpin (Ø3 stainless)</td><td>Simply supported between the arms, 41 mm span</td><td>30 N lateral at mid-span</td><td class="n">103 MPa</td><td class="n">0.05 mm</td><td class="n">2.4</td></tr>
-      <tr><td>Rear axle (Ø5 stainless)</td><td>Cantilever from the pod bearing to the wheel, 42 mm</td><td>35 N vertical at the wheel (about 10 g on a rear corner)</td><td class="n">105 MPa</td><td class="n">0.13 mm</td><td class="n">2.4</td></tr>
-      <tr><td>Tie rod (PETG)</td><td>Euler buckling, pinned-pinned, 56.7 mm, 6 × 5 bar</td><td>Servo stall push: 1.08 N·m on a 14 mm horn = 77 N</td><td class="n">P<sub>cr</sub> 403 N</td><td class="n">n/a</td><td class="n">5.2</td></tr>
+      <tr><td>Kingpin (Ø3 hardened)</td><td>Simply supported between the arm bosses, load mid-span</td><td>Lateral capacity at 1000 MPa</td><td class="n">216 N</td><td class="n">about 7 × a 10 g front corner</td></tr>
+      <tr><td>Knuckle steering arm (PETG, 8 × 8)</td><td>Cantilever from the barrel, 28 mm</td><td>Servo stall 1.37 N·m through the 20 mm ball radius, 69 N</td><td class="n">SF 1.78</td><td class="n">≥ 1.5</td></tr>
+      <tr><td>Spur drive</td><td>Two set screws on the axle flat, in shear</td><td>60 A peak, 6.21:1 at the axle</td><td class="n">SF 15.3</td><td class="n">≥ 3</td></tr>
+      <tr><td>Pod lug web (PETG)</td><td>Web bending over the axle-to-pivot lever</td><td>10 g vertical on the rear</td><td class="n">SF 10.0</td><td class="n">≥ 3</td></tr>
+      <tr><td>Tie rod (M3 steel)</td><td>Euler buckling, pinned-pinned, 54.5 mm ball to ball</td><td>Servo stall push through the bar</td><td class="n">SF 15.0</td><td class="n">≥ 2</td></tr>
     </tbody></table></div>
-  <div class="note"><b>Found while building this packet:</b> the tie rods were first drawn with a 6 × 3 mm bar, which buckles at about 69 N, below a stalled MG996R's push. A jammed wheel could have folded one. The bar is now 5 mm deep away from the eyes (it still prints flat), the rod is shorter after the track change, and the CAD build fails if the buckling factor drops under 2.</div>
+  <div class="note"><b>Found by the Rev E review:</b> the pod plate lugs necked to 1.2 mm around the shoulder-bolt boss, a P0 that no check covered because Rev E had no load cases. The pod floor now carries a full-height lug web and the 10 g case guards it. The steering arm is the lowest factor (1.78 at stall); the servo saver slips before the servo stalls on a hit, so the real load is lower.</div>
 </section>
 
 <section id="fits">
@@ -305,13 +306,13 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
     <thead><tr><th>Check</th><th>Criterion</th><th class="n">Result</th><th>Status</th></tr></thead>
     <tbody id="checks-body"></tbody></table></div>
   <h3>Not covered by any check</h3>
-  <p>The real rim hex depth and offset (not published; measure the rims), spring solid height, and the tie rods during bump travel. The firmware self-test proves the control maths, not the wiring or the radio.</p>
+  <p>The dimensions the makers do not publish (servo ears and spline offset, saver arm, clamping-hex thickness, coupling hub length, shock body and eyes, rim hex depth, foam size, the body's hood heights), the tie rods during bump travel, lead routing, fatigue and impact above about 15 km/h. The firmware tests prove the control decision on a simulated clock, not the wiring or the radio.</p>
 </section>
 
 <section id="parts">
   <div class="eyebrow">WK10-08 · Printed parts</div>
   <h2>Printed parts</h2>
-  <p>Every part was run through a printability analyser in its slicer orientation. Supports are needed in three places only: under the pan's rear spring arm, under the pod's pivot lug, and under each knuckle's steering arm. Layer height 0.2 mm throughout. Masses are estimates (solid volume × density × an infill factor of 1.0 or 0.6).</p>
+  <p>Every part was run through a printability analyser in its slicer orientation. Supports are needed under the pan's shock-tower arms and under each knuckle's arm and bearing housing. Layer height 0.2 mm throughout. Masses are estimates (solid volume × density × an infill factor of 1.0 or 0.6).</p>
   <div class="tablewrap"><table>
     <thead><tr><th>Part</th><th class="n">Qty</th><th>Material</th><th>Print settings</th><th class="n">Bounding box</th><th class="n">Mass</th></tr></thead>
     <tbody id="parts-body"></tbody><tfoot id="parts-foot"></tfoot></table></div>
@@ -320,38 +321,48 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
 <section id="bom">
   <div class="eyebrow">WK10-09 · Bill of materials</div>
   <h2>Bill of materials</h2>
-  <h3>To buy (prices checked 2026-10-12)</h3>
+  <h3>To buy (prices checked 2026-10-12/13)</h3>
   <div class="tablewrap"><table>
     <thead><tr><th>Part</th><th>Pick</th><th>Why</th><th class="n">Price</th></tr></thead>
     <tbody>
-      <tr><td>Motor + ESC</td><td><a href="https://store.hobbyetc.com/parts/view/181393">Hobbywing QuicRun 10BL60 SD G2 + QR3650 G2</a></td><td>Only combo with a confirmed 6 V / 4 A BEC for the servo and ESP32. 3600 Kv, 36 × 52.8 mm, 3.17 mm shaft</td><td class="n">$89.99</td></tr>
+      <tr><td>Motor + ESC</td><td><a href="https://store.hobbyetc.com/parts/view/181393">Hobbywing QuicRun 10BL60 SD G2 + QR3650 G2</a></td><td>6 V / 4 A BEC for the servo, receiver and ESP32. 3600 Kv, 36 × 52.8 mm</td><td class="n">$89.99</td></tr>
+      <tr><td>Radio</td><td><a href="https://shop.makerfire.com/products/dumborc-x6-transmitter-x6f-x6fg-receiver">DumboRC X6 + X6FG</a></td><td>6 channels, gyro receiver. Brake failsafe undocumented: bench-test it</td><td class="n">$43.99</td></tr>
+      <tr><td>Steering servo</td><td><a href="https://www.injora.com/products/14kg-metal-gear-digital-core-servo-for-1-10-rc-car">Injora INJS014</a></td><td>Low profile 28.8 mm, 25T, 14 kg·cm. Ears and spline offset unpublished</td><td class="n">$18.99</td></tr>
+      <tr><td>Servo saver</td><td><a href="https://store.hobbyetc.com/parts/view/5704">Kimbrough KIM114 25T</a></td><td>Saves the servo gears in a crash</td><td class="n">$5.00</td></tr>
+      <tr><td>Ball cups</td><td><a href="https://store.hobbyetc.com/parts/view/73558">Hot Racing RCS160C03</a></td><td>8 cups with 5.8 mm balls; rods are cut M3 screws</td><td class="n">$6.88</td></tr>
+      <tr><td>Wheel hexes</td><td><a href="https://www.adrenalinercracing.com/products/tamiya-5mm-aluminum-clamping-wheel-hex-blue-4">Tamiya 53823, 4</a></td><td>Clamp the 5 mm axle</td><td class="n">$22.40</td></tr>
+      <tr><td>Rear shocks</td><td><a href="https://997rcraceway.com/products/4m-24bs-4-injora-53mm-aluminum-threaded-oil-filled-shocks-for-1-18-trx4m-4m-24">Injora 53 mm oil shocks, 4</a></td><td>Two used, 39 to 53 mm, threaded collars set ride height</td><td class="n">$23.99</td></tr>
+      <tr><td>Foam bumper</td><td><a href="https://store.hobbyetc.com/parts/view/146324">Schumacher SCHU7790</a></td><td>Trim to 110 mm</td><td class="n">$6.80</td></tr>
+      <tr><td>Kingpin bushes</td><td><a href="https://www.ebay.com/p/1500179638">K&amp;S 9822 brass tube 4.0 × 3.1</a></td><td>Two 27 mm lengths</td><td class="n">$11.77</td></tr>
+      <tr><td>Kingpins</td><td><a href="https://www.amazon.com/QXCIVR-Chrome-Hardened-Optical-Printer/dp/B0DLM85W63">Hardened 3 × 100 mm rod</a></td><td>HRC 58 to 62, two 60 mm pins</td><td class="n">[price]</td></tr>
+      <tr><td>Axles</td><td><a href="https://www.amazon.com/uxcell-Linear-Hardened-Printer-Machine/dp/B0D4VKQ5R3">Hardened 5 × 200 mm shaft, 2</a></td><td>Rear 172 mm, front stubs 32 mm</td><td class="n">[price]</td></tr>
+      <tr><td>Spool hub</td><td>5 mm rigid flange coupling, 22 mm flange</td><td>Hub must be ≤ 10.5 mm long</td><td class="n">[price]</td></tr>
+      <tr><td>Body posts</td><td><a href="https://store.hobbyetc.com/parts/view/35784">Hot Racing 6 × 58 mm standoffs, 2 packs</a></td><td>Rear pair cut to length</td><td class="n">$9.76</td></tr>
+      <tr><td>Mux + supply</td><td>SN74HCT157N, LP2950-5.0, SN74LVC3G34 + adapter, LED, piezo</td><td>Radio-first control path</td><td class="n">$0.96 + [price]</td></tr>
       <tr><td>2S LiPo</td><td><a href="https://www.amazon.com/dp/B08DCYVHSF">Zeee 5200 mAh 80C XT60, 2-pack</a></td><td>138 × 47 × 25 mm fits the 47.5 mm bay</td><td class="n">$35.99</td></tr>
       <tr><td>Charger</td><td>SkyRC B6AC Neo (Amazon B0CV64ZB2L)</td><td>AC input built in</td><td class="n">$53.00</td></tr>
       <tr><td>LiPo bag</td><td><a href="https://www.amazon.com/dp/B0FWBMK87X">Zeee 28 × 22 cm</a></td><td>Charge and store</td><td class="n">$6.29</td></tr>
-      <tr><td>Pinions</td><td>ShareGoo 48P 13T to 17T set (Amazon B09FGC6JV4)</td><td>Gearing range; 14T default</td><td class="n">$11.49</td></tr>
-      <tr><td>Spur</td><td><a href="https://www.amazon.com/dp/B0006O1QW6">Kimbrough #148 87T 48P</a></td><td>Bolt pattern unpublished; the printed clamp ring is the drill template</td><td class="n">$9.13</td></tr>
-      <tr><td>5 mm rod</td><td>304 stainless 5 × 300 mm, 5 pcs (Amazon B0D5D2H1KJ)</td><td>Rear axle 200 mm, front stubs 46 mm</td><td class="n">$8.99</td></tr>
-      <tr><td>Shaft collars</td><td>5 mm bore, 10 mm OD, 12 pcs (Amazon B0F9P5CNSL)</td><td>Wheel and axle retention</td><td class="n">$5.99</td></tr>
-      <tr><td>Battery strap</td><td>Hobbypark 20 × 200 mm, 6 pcs (Amazon B08HHHFMCJ)</td><td></td><td class="n">$6.97</td></tr>
-      <tr><td>Body</td><td><a href="https://www.amazon.com/dp/B0CDZ1FSXN">PROTOform Venturi GT</a></td><td>190 mm class (191 wide), 430 long, 258 mm wheelbase, wing included, 85 to 90 g painted</td><td class="n">$29.99</td></tr>
-      <tr><td>Body clips</td><td><a href="https://www.walmart.com/ip/37293444">Traxxas 1834 body clips (12)</a></td><td>R-clips for the four posts; the body has none</td><td class="n">$6.95</td></tr>
+      <tr><td>Pinions</td><td>ShareGoo 48P 13T to 17T (Amazon B09FGC6JV4)</td><td>Gearing range; 14T default</td><td class="n">$11.49</td></tr>
+      <tr><td>Spur</td><td><a href="https://www.amazon.com/dp/B0006O1QW6">Kimbrough #148 87T 48P</a></td><td>Drilled on the carrier's spigot</td><td class="n">$9.13</td></tr>
+      <tr><td>Shaft collars</td><td>5 mm bore, 12 pcs (Amazon B0F9P5CNSL)</td><td>Front stub and rear axle retention</td><td class="n">$5.99</td></tr>
+      <tr><td>Battery strap</td><td>Hobbypark 20 × 200 mm (Amazon B08HHHFMCJ)</td><td></td><td class="n">$6.97</td></tr>
+      <tr><td>Body</td><td><a href="https://www.amazon.com/dp/B0CDZ1FSXN">PROTOform Venturi GT</a></td><td>190 mm class, 430 long, 258 mm wheelbase, wing included</td><td class="n">$29.99</td></tr>
+      <tr><td>Body clips</td><td><a href="https://www.walmart.com/ip/37293444">Traxxas 1834 (12)</a></td><td>R-clips for the four posts</td><td class="n">$6.95</td></tr>
     </tbody>
-    <tfoot><tr><td colspan="3">Total (about $284.64 with 7.5% Duval County tax; polycarbonate paint is optional and not included)</td><td class="n">$264.78</td></tr></tfoot></table></div>
+    <tfoot><tr><td colspan="3">Total: $406.33 priced + about $30 for the bracketed items, about $470 with 7.5% Duval County tax. Over the $375 target; the charger ($53, if one is on hand) and a printed damper in place of the shocks ($24) are the ways back under it.</td><td class="n">≈ $436</td></tr></tfoot></table></div>
   <h3>Already on hand</h3>
   <div class="tablewrap"><table>
     <thead><tr><th>Part</th><th class="n">Qty</th><th>Used for</th></tr></thead>
     <tbody>
       <tr><td>Shaluoman 1/10 on-road foam tires on rims, 67 × 26 mm, 12 mm hex</td><td class="n">4</td><td>Wheels</td></tr>
-      <tr><td>Deegoo MG996R metal-gear servo (1.08 N·m at 6 V, listing)</td><td class="n">1</td><td>Steering</td></tr>
-      <tr><td>ESP32 dev boards</td><td class="n">2</td><td>Car controller, optional handheld transmitter</td></tr>
+      <tr><td>ESP32 dev boards</td><td class="n">2</td><td>Car telemetry and autonomy, optional legacy transmitter</td></tr>
       <tr><td>685ZZ bearings (5 × 11 × 5)</td><td class="n">6</td><td>2 per knuckle, 1 per pod plate</td></tr>
-      <tr><td>3 mm × 300 mm 304 stainless rod</td><td class="n">1</td><td>Two 47 mm kingpins</td></tr>
-      <tr><td>304 stainless compression springs (kit)</td><td class="n">3</td><td>Kingpin springs; rear pod spring (27 mm+ free, about 3 N/mm)</td></tr>
+      <tr><td>304 stainless compression springs (kit)</td><td class="n">2</td><td>Kingpin springs</td></tr>
       <tr><td>M4 shoulder bolts, 5 × 10 mm shoulder</td><td class="n">2</td><td>Pod pivot</td></tr>
-      <tr><td>Brass heat-set inserts, M3 and M4</td><td class="n">~42</td><td>Every printed joint</td></tr>
-      <tr><td>M3 screws and nuts (12.9 kit)</td><td class="n">~60</td><td>Structure, spur clamp, tie-rod studs</td></tr>
-      <tr><td>PETG / PLA filament</td><td class="n">~100 g / ~150 g</td><td>Load-bearing and hot parts PETG; pan and trays PLA</td></tr>
-      <tr><td>XT60 pigtails, 14 AWG silicone wire, resistors, 6 V bench supply</td><td class="n">n/a</td><td>Wiring, battery divider, transmitter pots, bring-up</td></tr>
+      <tr><td>Brass heat-set inserts, M3 and M4</td><td class="n">~50</td><td>Every printed joint</td></tr>
+      <tr><td>M3 screws and nuts (12.9 kit)</td><td class="n">~70</td><td>Structure, ball studs, spur carrier, two cut for the tie rods</td></tr>
+      <tr><td>PETG filament</td><td class="n">~330 g</td><td>Every printed part</td></tr>
+      <tr><td>XT60 pigtails, 14 AWG silicone wire, resistor kit, 6 V bench supply</td><td class="n">n/a</td><td>Wiring, dividers, bring-up</td></tr>
     </tbody></table></div>
 </section>
 
@@ -364,37 +375,41 @@ pre.mermaid { background: var(--sheet); border: 1px solid var(--rule); border-ra
 flowchart LR
   B[2S LiPo 7.4 V] -- XT60 14 AWG --> E[ESC 10BL60]
   E -- 3 phase + sensor --> M[QR3650 motor]
-  E -- BEC 6 V --> S[MG996R servo]
-  E -- BEC 6 V to VIN --> R[ESP32 car]
-  R -- GPIO18 --> S
-  R -- GPIO19 --> E
+  E -- BEC 6 V --> RX[X6FG receiver]
+  E -- BEC 6 V --> S[INJS014 servo]
+  E -- BEC 6 V --> R[ESP32]
+  RX -- CH1 CH2 --> X[74HCT157 mux]
+  RX -- CH1 CH2 CH3 via buffer --> R
+  R -- GPIO18 GPIO19 --> X
+  R -- GPIO25 select, 10k pull-down --> X
+  X -- 1Y --> S
+  X -- 2Y --> E
   P[Phone or PC] -. Wi-Fi .-> R
-  T[ESP32 handheld] -. ESP-NOW .-> R
       </pre>
     </div>
     <div class="tablewrap" style="margin-top:0"><table>
       <thead><tr><th>Signal</th><th>Pin</th><th>Detail</th></tr></thead>
       <tbody>
-        <tr><td>Steering servo</td><td class="code">GPIO18</td><td>LEDC 50 Hz, 16-bit, 1000 to 2000 µs</td></tr>
-        <tr><td>ESC throttle</td><td class="code">GPIO19</td><td>Same timer; cut to 0 V by the watchdog ISR on a stall</td></tr>
-        <tr><td>Battery sense</td><td class="code">GPIO34</td><td>Optional 30k / 10k divider, ADC1</td></tr>
-        <tr><td>Status LED</td><td class="code">GPIO2</td><td>Link, armed, failsafe and calibration patterns</td></tr>
-        <tr><td>Handheld pots</td><td class="code">GPIO34/35</td><td>3V3 → 4.7k → 10k pot → 2.2k → GND, about 0.43 to 2.38 V</td></tr>
-        <tr><td>Handheld dead-man</td><td class="code">GPIO27</td><td>Pull-up; a broken wire reads released</td></tr>
+        <tr><td>ESP32 steering</td><td class="code">GPIO18</td><td>To mux 1I1; LEDC 50 Hz</td></tr>
+        <tr><td>ESP32 throttle</td><td class="code">GPIO19</td><td>To mux 2I1; cut by the watchdog ISR on a stall</td></tr>
+        <tr><td>Mux select S</td><td class="code">GPIO25</td><td>10k pull-down: low = receiver</td></tr>
+        <tr><td>Receiver CH1/CH2/CH3</td><td class="code">GPIO32/33/26</td><td>8.2k/20k divider into an SN74LVC3G34 on 3V3</td></tr>
+        <tr><td>Pack sense</td><td class="code">GPIO34</td><td>30k / 10k divider, 100 nF</td></tr>
+        <tr><td>BEC sense</td><td class="code">GPIO35</td><td>20k / 10k divider, 100 nF</td></tr>
+        <tr><td>LED / piezo</td><td class="code">GPIO23 / 22</td><td>330R / 100R</td></tr>
       </tbody></table></div>
   </div>
   <h3>Safety model</h3>
   <div class="tablewrap"><table>
     <thead><tr><th>Mechanism</th><th>Behaviour</th></tr></thead>
     <tbody>
-      <tr><td>Single writer</td><td>A 100 Hz control task (priority 10, core 1) is the only code that sets the servo and ESC pulses. The web server and OTA, which can block for seconds, only hand it commands under a spinlock.</td></tr>
-      <tr><td>Failsafe</td><td>No valid command for 250 ms (configurable 100 to 500 ms) gives neutral throttle and centre steering. Pulses keep running so the ESC sees neutral, not a frozen value.</td></tr>
-      <tr><td>Arming gate</td><td>Throttle passes only after the dead-man has been seen released on the current source since boot, since the last failsafe and since the last source change. A brownout reboot with the trigger held does not launch the car.</td></tr>
-      <tr><td>Watchdog</td><td>If the control task stalls for 300 ms, the watchdog interrupt detaches GPIO19 and holds it low before the chip resets, so the ESC drops to its own signal-loss failsafe.</td></tr>
-      <tr><td>Limits</td><td>Forward power capped at 50% until raised; reverse capped at half; throttle slew 4 full-scale/s; low-pack limp mode at 3.4 V per cell (with the divider).</td></tr>
-      <tr><td>ESC calibration</td><td>A 30 s phone-only mode sends true 1000 to 2000 µs end points; it ends if the phone loses control. Without it the ESC would learn the 50% cap as full power.</td></tr>
-      <tr><td>Inputs</td><td>Every setting is range-checked on the car; transmitter packets need the bound MAC, a checksum and a rising sequence number; settings and OTA are refused unless the car is parked.</td></tr>
-      <tr><td>Verification</td><td>Both sketches compile (car 77% of flash). The control maths self-test runs at boot and on the PC; three deliberately broken copies of it fail. The Python client is tested against a fake car.</td></tr>
+      <tr><td>Radio wins</td><td>The mux passes the receiver unless GPIO25 is high; the pull-down means a dead, resetting or booting ESP32 leaves the radio in control.</td></tr>
+      <tr><td>Engage</td><td>Only with CH3 at 1800 to 2200 µs on two pulses, fresh CH1/CH2, an on-time loop, a fresh armed command at zero throttle, pack rested ≥ 3.7 V/cell, BEC ≤ 6.5 V, all held 500 ms.</td></tr>
+      <tr><td>Release</td><td>In the same 10 ms step if the receiver stops, the pack sags under 3.3 V/cell for 2 s, five bad ADC readings in a row, the loop runs late, or OTA or a save starts. CH3 to manual hands back within 50 ms.</td></tr>
+      <tr><td>ESP32 source lost</td><td>Brake at 35% of the reverse span for 3 s, then hand back; only when the ESC would really brake. If it could read reverse, neutral and hand back at once.</td></tr>
+      <tr><td>Receiver failsafe</td><td>Set to CH3 manual and CH2 light brake, never hold.</td></tr>
+      <tr><td>Watchdog</td><td>A control task stalled 300 ms trips the watchdog; its ISR drops S and cuts GPIO19 before the reset.</td></tr>
+      <tr><td>Verification</td><td>Both sketches compile (car 80% of flash, no warnings with -Wall -Wextra on the host build). The boot self-test and simulated-clock control scenarios pass on the PC; 25 deliberately broken headers each fail (4 more re-checked independently). The Python client is tested against a fake car.</td></tr>
     </tbody></table></div>
 </section>
 
@@ -404,12 +419,17 @@ flowchart LR
   <div class="tablewrap"><table>
     <thead><tr><th>Test</th><th>Pass criterion</th><th>Prediction</th><th>Status</th></tr></thead>
     <tbody>
-      <tr><td>Host self-test</td><td>All control-maths checks pass</td><td>n/a</td><td><span class="pass">pass 2026-10-12</span></td></tr>
-      <tr><td>Python client vs fake car</td><td>Arms, aborts on disarm, refuses calibration, always stops</td><td>n/a</td><td><span class="pass">pass 2026-10-12</span></td></tr>
-      <tr><td>Calibration coupon</td><td>685ZZ light press in the 11.2 hole; set HOLE_COMP</td><td>11.0 printed</td><td><span class="todo">to do</span></td></tr>
-      <tr><td>Failsafe</td><td>Motor stops within 250 ms on finger up, Wi-Fi off, script killed, ESP32 reset while held, transmitter unplugged; no restart until released and pressed</td><td>≤ 250 ms</td><td><span class="todo">to do</span></td></tr>
-      <tr><td>Steering</td><td>No servo buzz at lock; no wheel contact at lock with the suspension compressed, body on</td><td>33° servo for 28° lock</td><td><span class="todo">to do</span></td></tr>
-      <tr><td>Rear ride height</td><td>Pan rear edge 5 mm off a flat table, car on its wheels with battery</td><td>9 N on the spring</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>CAD checks</td><td>Section 07 and section 05 floors</td><td>n/a</td><td><span class="pass">pass 2026-10-13</span></td></tr>
+      <tr><td>Host self-test</td><td>Boot self-test and control scenarios pass; mutants fail</td><td>n/a</td><td><span class="pass">pass 2026-10-13</span></td></tr>
+      <tr><td>Python client vs fake car</td><td>Waits for the mux, 50 Hz frames, aborts on mux loss, always stops</td><td>n/a</td><td><span class="pass">pass 2026-10-13</span></td></tr>
+      <tr><td>Calibration coupon</td><td>685ZZ light press in the 11.2 hole, brass tube press in 4.2; set HOLE_COMP</td><td>11.0 printed</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>VERIFY dimensions</td><td>Every VERIFY value in bought.py measured, build re-run</td><td>n/a</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>Failsafe</td><td>CH3 flip, TX off, ESP32 unplugged: radio has the car within 0.1 s. Phone Wi-Fi off, script killed: 3 s brake then hand-back. Never a reverse pulse after reverse</td><td>≤ 0.1 s</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>Handover pulses</td><td>Scope on mux 1Y and 2Y while flipping CH3: no cut or merged pulse</td><td>n/a</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>Kingpins</td><td>Knuckle slides full travel on its spring, no bind lock to lock</td><td>n/a</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>Steering</td><td>No servo buzz at lock; no contact at lock with the suspension compressed, body on</td><td>37° servo for 28° lock</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>Rear ride height</td><td>Pan rear edge 5 mm off a flat table, set on the shock collars</td><td>n/a</td><td><span class="todo">to do</span></td></tr>
+      <tr><td>Crash</td><td>10 km/h into a padded wall, 5 times: saver slips, nothing cracks</td><td>n/a</td><td><span class="todo">to do</span></td></tr>
       <tr><td>Heat, 5 minute run</td><td>Motor and motor plate under 60 °C, ESC under 70 °C</td><td>24.5 W motor heat</td><td><span class="todo">to do</span></td></tr>
       <tr><td>Top speed</td><td>Timed 20 m pass</td><td>52.6 km/h on 14T</td><td><span class="todo">to do</span></td></tr>
       <tr><td>Runtime</td><td>Minutes to the ESC low-voltage cutoff</td><td>≥ 8.9 min</td><td><span class="todo">to do</span></td></tr>
@@ -422,22 +442,33 @@ flowchart LR
   <div class="tablewrap"><table>
     <thead><tr><th>Issue</th><th>Impact</th><th>Plan</th></tr></thead>
     <tbody>
-      <tr><td>Rim hex depth not published</td><td>The front wheel stack-up check assumes a 5 mm pocket in an 8 mm boss; a different rim moves the wheel in or out</td><td>Measure a rim; HUB_COLLAR is the one knob that brings the wheel back to 82 mm</td></tr>
-      <tr><td>Body hood and deck heights not published</td><td>The shell is a stand-in sized to the published 430 × 191 × 258 WB; post heights and clearances are only as good as it</td><td>Put the shell on the car before trimming the posts; the posts are printed 9 mm proud of the modelled skin, so they get cut down, never extended</td></tr>
-      <tr><td>Listing dimensions (servo ears 49.5 / 26.6, horn height, spur thickness 6, motor holes 25 inferred from the 540 standard)</td><td>Mounting holes may be off by a millimetre or two</td><td>Measure on arrival; each is one parameter</td></tr>
-      <tr><td>HOLE_COMP = 0.2 mm assumed</td><td>Bearing and pin fits may be loose or tight</td><td>Print the coupon first</td></tr>
-      <tr><td>Bump steer 1.49° toe-out at full 7 mm bump</td><td>Some darting over bumps</td><td>Inherent to sliding pillar with a central servo; travel is short on smooth pavement</td></tr>
-      <tr><td>No dampers (spring friction only, front and rear)</td><td>Pitch and bounce oscillation on rough ground</td><td>Grease on the kingpins; oil damper on the pod later</td></tr>
-      <tr><td>Locked rear axle</td><td>Push in tight corners</td><td>v2: bought steel 1/10 gear diff in place of the spool</td></tr>
-      <tr><td>Rear spring rate unknown until chosen</td><td>Ride height and pod bottoming</td><td>27 mm+ free, about 3 N/mm; set height with printed shims; CAD proves 1.3 mm clearance at 4° swing</td></tr>
-      <tr><td>ESP-NOW packets unencrypted</td><td>A determined spoofer could drive it</td><td>MAC binding and sequence numbers stop accidents and replays only</td></tr>
-      <tr><td>Firmware not run on hardware</td><td>Timing and radio behaviour unproven</td><td>Bench bring-up with wheels off the ground</td></tr>
+      <tr><td>Unpublished bought-part dimensions (marked VERIFY): servo ears and spline offset, saver arm radius and height, clamping-hex thickness, coupling hub length, shock body and eyes, foam size</td><td>Mounting holes and stack-ups may be off by a millimetre or two</td><td>Measure on arrival; each is one parameter in bought.py and the build re-checks everything</td></tr>
+      <tr><td>Rim hex depth not published</td><td>A different pocket moves the wheel in or out</td><td>Measure a rim; one parameter brings the wheel back to 82 mm</td></tr>
+      <tr><td>Body hood and deck heights not published</td><td>Post heights and clearances are only as good as the stand-in shell</td><td>Standoffs are cut to length on the real shell</td></tr>
+      <tr><td>HOLE_COMP = 0.2 mm assumed</td><td>Bearing, bush and pin fits may be loose or tight</td><td>Print the coupon first</td></tr>
+      <tr><td>Receiver failsafe and CH3 decisions are ESP32 software</td><td>A live ESP32 with a logic bug that holds S high would keep the radio out; the watchdog only covers a stalled loop</td><td>Hardware CH3 gate on S (one-shot + flip-flop + 74HCT08), designed in CHANGES-revF.md, not built</td></tr>
+      <tr><td>X6FG failsafe behaviour undocumented</td><td>A hold-only receiver hides transmitter loss</td><td>Bench-test before the first run</td></tr>
+      <tr><td>Bump steer 1.15° at full 7 mm bump</td><td>Some darting over bumps</td><td>Inherent to sliding pillar with a central servo; travel is short on pavement</td></tr>
+      <tr><td>Locked rear axle</td><td>Push in tight corners</td><td>v2: bought 1/10 pan-car diff in place of the spool</td></tr>
+      <tr><td>Over the $375 budget</td><td>About $470 with tax</td><td>Skip the charger if owned; printed damper in place of the shocks</td></tr>
+      <tr><td>Firmware not run on hardware</td><td>Timing, receiver capture and radio behaviour unproven</td><td>Bench bring-up with wheels off the ground</td></tr>
     </tbody></table></div>
   <h2 style="margin-top:28px">Review log</h2>
-  <p>The design was reviewed three times by an independent agent that read the code and model without the author's notes, again while this packet was assembled, and a fourth time when every bought part was replaced with a model built from its maker's dimensions. The detailed parts found what the plain boxes had hidden. Every finding below was fixed and is covered by a check where one is possible.</p>
+  <p>Rev F answers a hostile three-way review of Rev E (comparison with proven 1/10 pan cars and printable cars, a mechanical CAD review, an electronics and firmware review), listed first. Earlier: the design was reviewed three times by an independent agent that read the code and model without the author's notes, again while this packet was assembled, and a fourth time when every bought part was replaced with a model built from its maker's dimensions. The detailed parts found what the plain boxes had hidden. Every finding below was fixed and is covered by a check where one is possible.</p>
   <div class="tablewrap"><table>
     <thead><tr><th>Round</th><th>Severity</th><th>Finding</th><th>Fix</th></tr></thead>
     <tbody>
+      <tr><td>Rev E</td><td><span class="sev p0">P0</span></td><td>Knuckle inner bearing could not be installed: the kingpin barrel blocked the inboard end</td><td>Kingpin 10.5 mm forward; both bearings from outboard against a lip; insertion-path check</td></tr>
+      <tr><td>Rev E</td><td><span class="sev p0">P0</span></td><td>Pod plate lugs necked to 1.2 mm around the pivot boss</td><td>Full-height lug web; 10 g load case (SF 10.0)</td></tr>
+      <tr><td>Rev E</td><td><span class="sev p0">P0</span></td><td>Pinion overlapped the spur by 1 mm of face</td><td>Face overlap and shaft reach checked across the motor slot</td></tr>
+      <tr><td>Rev E</td><td><span class="sev p0">P0</span></td><td>Link loss released the throttle: about 335 m coast from top speed</td><td>Radio primary with receiver failsafe; ESP32 brakes then hands back</td></tr>
+      <tr><td>Rev E</td><td><span class="sev p1">P1</span></td><td>Wi-Fi HTTP control with no hardware override</td><td>74HCT157 mux, receiver by default</td></tr>
+      <tr><td>Rev E</td><td><span class="sev p1">P1</span></td><td>MG996R horn 24 mm above the knuckle arms; no saver; printed eyes, 3.6° toe play</td><td>Low-profile servo through the pan, saver, ball cups, re-solved linkage</td></tr>
+      <tr><td>Rev E</td><td><span class="sev p1">P1</span></td><td>PETG barrel on stainless kingpin; zero trail; 31.5 mm scrub</td><td>Brass bush on a hardened pin; 10.5 mm trail; 21 mm scrub</td></tr>
+      <tr><td>Rev E</td><td><span class="sev p1">P1</span></td><td>Printed hex hubs and D-bore spool</td><td>Clamping hexes; flange coupling on a flat (SF 15)</td></tr>
+      <tr><td>Rev E</td><td><span class="sev p1">P1</span></td><td>One undamped spring off to one side of the pod</td><td>Two oil coilovers</td></tr>
+      <tr><td>Rev E</td><td><span class="sev p1">P1</span></td><td>No bumper, no gear cover, battery free to slide; rear body posts on the pod; PLA parts</td><td>Foam bumper, cover, battery stop; all posts on the pan; all PETG</td></tr>
+      <tr><td>Rev E</td><td><span class="sev p1">P1</span></td><td>Firmware review of the new control path: the failsafe brake could command reverse</td><td>ESC state tracker; brake only when the ESC would brake; 25 mutants</td></tr>
       <tr><td>1</td><td><span class="sev p0">P0</span></td><td>Failsafe ran in the same loop as the web server, which can block for 5 s while the ESC holds its last pulse</td><td>Dedicated control task, sole pulse writer</td></tr>
       <tr><td>1</td><td><span class="sev p0">P0</span></td><td>No neutral re-arm after reboot, failsafe or source change; stale web command could resume driving</td><td>Arming gate, tested at boot</td></tr>
       <tr><td>1</td><td><span class="sev p0">P0</span></td><td>User-tunable neutral could differ from the pulse the ESC armed on (creep)</td><td>Neutral fixed at boot, range ±30 µs</td></tr>
@@ -460,12 +491,12 @@ flowchart LR
   <div class="tablewrap"><table>
     <thead><tr><th>#</th><th>Question</th></tr></thead>
     <tbody>
-      <tr><td class="n">1</td><td>Knuckles print with the axle bore vertical, so wheel loads bend the housing across layer lines. Is 100% infill PETG enough there, or should the bearing housing get a different orientation or a metal sleeve?</td></tr>
-      <tr><td class="n">2</td><td>The motor plate is PETG at up to about 60 °C with an M3-clamped motor. How worried should I be about creep loosening the gear mesh over a few runs?</td></tr>
-      <tr><td class="n">3</td><td>The sliding pillar runs a PETG knuckle (3.5 mm bore) on a 3 mm stainless pin with grease. Stiction and wear: acceptable, or bush it with brass tube?</td></tr>
-      <tr><td class="n">4</td><td>The kingpin and rear axle sit at a safety factor of about 2.4 for a 10 g corner strike. Is that load case realistic for a 1.2 kg car hitting a kerb at 50 km/h?</td></tr>
-      <tr><td class="n">5</td><td>The pan is split at X = 86 and spliced by an 8 mm block with 8 M3 screws. Does the joint need more length, or will the side rails carry the bending?</td></tr>
-      <tr><td class="n">6</td><td>The rear pod has one coil spring and no damper. Is a printed friction damper or an oil damper worth adding before the first run?</td></tr>
+      <tr><td class="n">1</td><td>Knuckles print with the barrel upright, so wheel loads bend the bearing housing across layer lines. Is 100% infill PETG enough, or should the housing get a metal sleeve?</td></tr>
+      <tr><td class="n">2</td><td>The steering arm is the lowest load factor (1.78 at servo stall, PETG 8 × 8 at 28 mm). With the saver in the path, is stall the right design load, or should it be an impact case?</td></tr>
+      <tr><td class="n">3</td><td>The hardened kingpins press into drilled PETG bosses. Will they walk out under cyclic side load, and is a cross-pin or loctite worth it?</td></tr>
+      <tr><td class="n">4</td><td>The motor plate is PETG at up to about 60 °C with an M3-clamped motor. How worried should I be about creep loosening the gear mesh?</td></tr>
+      <tr><td class="n">5</td><td>The pan is split at X = 86 and spliced by the servo block. With the servo pocket now through the pan under the block, does the joint need more length?</td></tr>
+      <tr><td class="n">6</td><td>The shocks are 1/18 crawler units at 53 mm. Is their spring rate and stroke a sensible match for a 1.33 kg pan car pod, or is a pan-car side link worth the cost?</td></tr>
       <tr><td class="n">7</td><td>Anything on the drawings you would dimension, tolerance or datum differently for a part that comes off an FDM printer?</td></tr>
     </tbody></table></div>
   <p style="margin-top:14px">The CAD source, STEP files, print-ready STLs and these drawings come as a separate zip from Brett. The whole model regenerates from one Python file, so any change you suggest can be re-checked in about a minute.</p>
@@ -493,8 +524,8 @@ const specs = [
   ['Top speed', '52.6', 'km/h', '14T / 87T, 6.21:1, 3600 Kv on 2S'],
   ['Steering', st.left.ackermann_pct + '%', 'Ackermann', st.left.servo_deg + '° servo for 28° lock'],
   ['Suspension travel', '+7 / −5', 'mm', 'Front sliding pillar; rear pod ±4°'],
-  ['Printed parts', Math.round(totalPrinted), 'g', 'PLA chassis, PETG for load and heat'],
-  ['Parts to buy', '$265', 'USD', 'About $285 with tax'],
+  ['Printed parts', Math.round(totalPrinted), 'g', D.parts.length + ' part files, all PETG'],
+  ['Parts to buy', '$436', 'USD', 'Estimate, about $470 with tax'],
 ];
 document.getElementById('v-split').textContent = `${100 - D.cg.rear_pct} / ${D.cg.rear_pct}`;
 document.getElementById('v-tip').textContent = `${D.cg.tip_g} g`;
@@ -504,44 +535,46 @@ document.getElementById('specs').innerHTML = specs.map(([k, v, u, n]) =>
 
 // ---------- fits
 const fits = [
-  ['685ZZ bearing seat', 'Knuckles (2 each), pod plates', '11.00', '11.20', 'Light press; CA if loose'],
-  ['Kingpin press', 'Lower arms, upper arms', '3.00', '3.00', 'Prints ~2.8; drill to 3.0 for a press'],
-  ['Kingpin slide', 'Knuckle barrel, bump stop', '3.30', '3.50', 'Running clearance on Ø3 pin, greased'],
-  ['Hub bore', 'Hex hubs on Ø5 axle', '5.15', '5.35', 'Slip fit, M3 set bolt on a 0.5 mm flat'],
-  ['Spool D-bore', 'Spool on Ø5 axle', '5.15 / flat 2.10', '5.35 / flat 2.20', 'Keys on the axle flat, slides 100 mm'],
+  ['685ZZ bearing seat', 'Knuckles (2 each), pod plates', '11.00', '11.20', 'Light press against a 1 mm lip; CA if loose'],
+  ['Brass bush press', 'Knuckle barrel', '4.00', '4.20', 'Press, then ream the tube to 3.05'],
+  ['Kingpin slide', 'Brass tube on Ø3 hardened pin', '3.05 reamed', 'n/a', 'Running fit, greased'],
+  ['Kingpin press', 'Lower arm bosses', '3.00', '3.00', 'Prints about 2.8; drill to 2.9 for a press'],
+  ['Spur carrier bore', 'Carrier on Ø5 axle', '5.15', '5.35', 'Slip; the coupling carries the torque'],
+  ['Coupling', 'Aluminium flange hub on Ø5 axle', '5.00 H7', 'bought', 'Two set screws on a 0.5 mm flat'],
   ['M3 heat-set pilot', 'All inserts', '4.00 × 6.3', '4.20 × 6.3', 'Per insert maker; walls ≥ 1.7 mm'],
   ['M4 heat-set pilot', 'Pod pivot lug', '5.40', '5.60', 'Shoulder-bolt pivot'],
   ['M3 clearance', 'All bolted joints', '3.20', '3.40', 'Clearance'],
-  ['Pivot shoulder', 'Pan lugs on Ø5 shoulder', '5.15', '5.35', 'Running fit; 0.3 mm side float each way'],
-  ['Spur centre', 'Drilled spur on Ø12 spool hub', '12.2 drilled', 'n/a', 'Clamped between flange and ring, 3 × M3'],
-  ['Race shim', 'Collars and hubs against 685 inner race', 'Ø6.5 / Ø5.5 × 1', '6.5 / 5.5', 'Clears the bearing shield'],
-  ['Gear mesh', '14T / 87T 48P (m 0.529)', '26.723 C-C', '26.72', 'Slotted ±1.5 mm, set with paper'],
+  ['Pivot shoulder', 'Pan lugs on Ø5 shoulder', '5.15', '5.35', 'Running fit; ≥ 0.25 mm side float each way'],
+  ['Race and lip shims', 'Collars and hexes against the 685 inner race', 'Ø6.5 / Ø5.5 × 1 and 1.3', '6.5 / 5.5', 'Clears the bearing shield'],
+  ['Gear mesh', '14T / 87T 48P (m 0.529)', '26.723 C-C', '26.72', 'Slotted ±1.0 mm (13T to 17T), set with paper'],
 ];
 document.getElementById('fits-body').innerHTML = fits.map(r =>
   `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="n">${r[2]}</td><td class="n">${r[3]}</td><td>${r[4]}</td></tr>`).join('');
 
 // ---------- checks
 const checks = [
-  ['No overlaps, assembled pose', 'Every printed and bought part pair < 0.01 mm³ (meshing gear teeth excepted)', '0 overlaps'],
-  ['Steering sweep', 'Wheel + knuckle at ±28° clear the chassis', '3.3 mm'],
-  ['Front travel', '+7 / −5 mm at straight and full lock', '1.5 mm'],
-  ['Tie rods at lock', 'Real rod geometry vs chassis, servo, knuckle, wheels', '4.2 mm'],
+  ['No overlaps, assembled pose', 'Every printed and bought part pair < 0.01 mm³ (gear teeth and ball joints excepted)', '0 overlaps'],
+  ['Knuckle bearings installable', 'Both 685ZZ and the spacer have a clear path from outboard; a lip stands behind the inner one', 'pass'],
+  ['Steering sweep', 'Wheel + knuckle at ±28° clear the chassis, body and bumper', '2.0 mm'],
+  ['Front travel', '+7 / −5 mm at straight and full lock', '0.6 mm'],
+  ['Tie rods at lock', 'Bought rods and cups, saver turned, vs everything', '1.8 mm'],
   ['Ackermann', '70 to 130% both directions', st.left.ackermann_pct + '% / ' + st.right.ackermann_pct + '%'],
   ['Servo throw for 28° lock', '25 to 45°', st.left.servo_deg + '°'],
   ['Transmission angle', '≥ 40° (no toggle)', st.left.min_transmission_deg + '°'],
   ['Both wheels steer the same way', 'Sign check over the whole sweep', 'yes'],
   ['Bump steer', '< 0.5° per 3 mm and < 1.6° at full travel', st.bump_steer_deg_per_3mm + '° / ' + st.bump_steer_deg_full + '°'],
-  ['Tie rod buckling', 'Euler P_cr ≥ 2 × servo stall push', 'SF 5.2'],
-  ['Front wheel stack-up', 'Bearing, race shim, hub collar and rim hex put the wheel centre on track / 2 (±0.5)', '82.0 mm'],
-  ['Body clearance', 'Shell vs tires at ±28° lock, +7 bump and −5 droop, and vs every part', 'pass'],
-  ['Body posts', 'Post tops computed from the shell: skin + 9 mm', 'F 92.5, R 92.8'],
-  ['ESP32 board fit', 'Board, module and header pins vs cradle and lid', '0 overlap, 0.2 mm lid gap'],
+  ['Front wheel stack-up', 'Bearings, shims, clamping hex and rim put the wheel centre on track / 2 (±0.5)', '82.0 mm'],
+  ['Foam bumper', 'Stands > 8 mm ahead of the tires', 'pass'],
+  ['Pinion on the spur', 'Face overlap ≥ 90% of the pinion width; motor shaft reaches the pinion face', 'pass'],
+  ['Shock length', 'Inside 39 to 53 mm (0.5 mm margin) at both 4° stops', 'pass'],
   ['Rear pod swing', '±4° clears the pan (lugs excluded)', '1.1 mm'],
-  ['Pivot float', '≥ 0.25 mm each side', '0.3 mm'],
-  ['Ground clearance at pod swing', 'Pan rear edge > 1 mm off the ground at 4°', '1.3 mm'],
-  ['Motor and spur height', 'Spur > 6 mm off the ground; motor clear of axle', '10.5 mm'],
-  ['Bed fit', 'Every part fits 220 × 220 × 250 in its print pose', 'all 25'],
-  ['Solid validity', 'Every part is a valid closed solid', 'all 25'],
+  ['Pivot float', '≥ 0.25 mm each side', 'pass'],
+  ['Ground clearance at pod swing', 'Pan rear edge > 1 mm off the ground at 4°', 'pass'],
+  ['Spur height', 'Spur > 6 mm off the ground; clear of the motor plate', 'pass'],
+  ['Body posts', 'Post tops computed from the shell: skin + 9 mm', 'F 92.1, R 90.6'],
+  ['Load cases', 'Section 05 floors', 'pass'],
+  ['Bed fit', 'Every part fits 220 × 220 × 250 in its print pose', 'all ' + D.parts.length],
+  ['Solid validity', 'Every part is a valid closed solid', 'all ' + D.parts.length],
 ];
 document.getElementById('checks-body').innerHTML = checks.map(r =>
   `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="n">${r[2]}</td><td><span class="pass">pass</span></td></tr>`).join('');
@@ -551,11 +584,11 @@ const pretty = n => n.replace(/_x\d$/, '').replace(/_/g, ' ');
 const rows = D.parts.map(p => `<tr><td class="code">${pretty(p.name)}</td><td class="n">${p.qty}</td><td>${p.material}</td><td>${p.note.replace(/^(PETG|PLA)( or PLA)?,?\s*/, '')}</td><td class="n">${p.bbox.join(' × ')}</td><td class="n">${fmt(p.mass_g * p.qty)} g</td></tr>`);
 document.getElementById('parts-body').innerHTML = rows.join('');
 const petg = D.parts.filter(p => p.material === 'PETG').reduce((s, p) => s + p.mass_g * p.qty, 0);
-document.getElementById('parts-foot').innerHTML = `<tr><td colspan="5">Total printed (PETG ${Math.round(petg)} g, PLA ${Math.round(totalPrinted - petg)} g)</td><td class="n">${Math.round(totalPrinted)} g</td></tr>`;
+document.getElementById('parts-foot').innerHTML = `<tr><td colspan="5">Total printed, all PETG</td><td class="n">${Math.round(totalPrinted)} g</td></tr>`;
 
 // ---------- drawing tabs
 const tabs = document.getElementById('sheettabs'), sheetBox = document.getElementById('sheet');
-const names = { '01': 'General arrangement', '02': 'Front suspension + steering', '03': 'Rear pod + drivetrain', '04': 'Knuckle detail', '05': 'Spool, clamp, hub', '06': 'Body + envelope' };
+const names = { '01': 'General arrangement', '02': 'Front suspension + steering', '03': 'Rear pod + drivetrain', '04': 'Knuckle detail', '05': 'Spur carrier, coupling, cover', '06': 'Body + envelope' };
 function showSheet(k) {
   sheetBox.innerHTML = SHEETS[k];
   [...tabs.children].forEach(b => b.setAttribute('aria-selected', String(b.dataset.k === k)));
@@ -641,12 +674,12 @@ function barChart(id, o) {
 
 function drawCharts() {
   lineChart('ch-steer', { title: 'Steering kinematics', sub: 'Wheel angle against servo angle. The outer wheel tracks the ideal Ackermann angle for the inner wheel within 0.2° at lock.',
-    rows: D.sweep, xk: 'servo', x: [0, 36], y: [0, 30], xstep: 6, ystep: 5, xlab: 'servo (°)', ylab: 'wheel angle (°)', unit: '°',
+    rows: D.sweep, xk: 'servo', x: [0, 42], y: [0, 30], xstep: 6, ystep: 5, xlab: 'servo (°)', ylab: 'wheel angle (°)', unit: '°',
     series: [{ k: 'inner', name: 'inner', c: '--s1', dy: -4 }, { k: 'outer', name: 'outer', c: '--s2', dy: 8 }, { k: 'ideal', name: 'ideal outer', c: '--s3', dash: true, dy: 20 }] });
   lineChart('ch-bump', { title: 'Bump steer', sub: 'Left wheel steer angle against suspension travel (+ is bump). Positive is toe-out; it grows with the square of travel.',
     rows: D.bump, xk: 'dz', x: [-5, 7], y: [0, 1.6], xstep: 1, ystep: 0.4, xlab: 'travel (mm)', ylab: 'toe-out (°)', unit: '°', zero: true,
     series: [{ k: 'toe', name: 'toe-out', c: '--s1' }] });
-  barChart('ch-gear', { title: 'Top speed by pinion', sub: '87T 48P spur, 3600 Kv on 2S. Launch is traction-limited for every pinion, so 0 to 30 km/h stays at 1.38 s; taller gears only add top speed and motor heat. 14T is the default.',
+  barChart('ch-gear', { title: 'Top speed by pinion', sub: '87T 48P spur, 3600 Kv on 2S. Launch is traction-limited for every pinion, so 0 to 30 km/h stays at 1.41 s; taller gears only add top speed and motor heat. 14T is the default.',
     rows: D.gearing.map(g => ({ k: `${g.pinion}T · ${g.ratio}:1`, v: g.top_kmh, t: `${g.top_kmh} km/h`, hi: g.pinion === 14, tip: `${g.pinion}T, ${g.ratio}:1<br>${g.top_kmh} km/h top speed` })),
     max: 70, step: 10, lw: 120 });
   const totM = D.masses.reduce((s, m) => s + m.g, 0);
@@ -680,14 +713,20 @@ const EXPLODE = { body: [0, 0, 140], chassis: [0, 0, 0], front: [60, 0, 0], stee
   electronics: [0, 0, 70], drivetrain: [-70, 0, 0], wheels: [0, 0, -45] };
 const REF = {
   tires: ['Shaluoman 1/10 foam tires', '67 × 26 mm on 12 mm hex rims, ET3'], rims: ['6-spoke 1/10 rim', 'Hex pocket depth not published: measure'],
+  clamp_hexes: ['Tamiya 53823 clamping hex', '12 mm, 5 mm bore, clamps the axle'],
   battery: ['Zeee 2S 5200 mAh 80C hard case', '138 × 47 × 25 mm, 256 g, XT60'], esc: ['Hobbywing QuicRun 10BL60 Sensored G2', '35 × 31 × 30.8 mm with fan, 66.5 g, 6 V / 4 A BEC'],
-  esp32: ['Espressif ESP32-DevKitC V4', 'PCB 48.26 × 27.94, module overhangs 6.04; held in the printed cradle'], esp32_pins: ['DevKitC header pins', '2 × 19 at 2.54, leads soldered'],
-  servo: ['MG996R metal-gear servo', '40.7 × 19.7 × 42.9 mm, 55 g, 1.08 N·m at 6 V'], servo_horn: ['Single-arm horn', 'Hole at 14 mm drilled to 3.0 for both tie rods'],
-  leads: ['14 AWG silicone leads + XT60', 'Indicative routes; motor leads loop over the pod pivot'],
-  motor: ['Hobbywing QuicRun 3650 SD G2 10.5T', '3600 Kv, 36 × 52.8 mm, 186 g, 3.17 shaft'], spur: ['Kimbrough #148 87T 48P spur', 'Centre drilled Ø12.2, clamped to the spool'],
-  pinion: ['14T 48P pinion', '3.17 bore, set screw on the shaft flat'], rear_axle: ['Ø5 × 200 mm 304 stainless', '0.5 mm flat ground along the spool'],
-  kingpins: ['Ø3 × 47 mm 304 stainless', 'Pressed into the arms; knuckles slide on them'], collars: ['5 mm shaft collars', 'Axle retention'],
-  body: ['PROTOform Venturi GT 190 mm', 'Clear polycarbonate, 85 to 90 g painted. Shape heights are a stand-in until the shell is in hand'],
+  esp32: ['Espressif ESP32-DevKitC V4', 'Telemetry and autonomy behind the mux; held in the printed cradle'], esp32_pins: ['DevKitC header pins', '2 × 19 at 2.54, leads soldered'],
+  servo: ['Injora INJS014 low-profile servo', '28.8 mm tall, 25T, 14 kg·cm; ears and spline offset VERIFY'], servo_saver: ['Kimbrough KIM114 servo saver', '25T; arm dimensions VERIFY'],
+  tie_rod_cups: ['Hot Racing ball cups', '5.8 mm balls'], tie_rods: ['Cut M3 stainless rods', '54.5 mm ball to ball; half a turn is about 0.3° of toe'], ball_studs: ['5.8 mm ball studs', 'M3 into inserts in the bar and knuckle arms'],
+  leads: ['14 AWG silicone leads + XT60', 'Indicative routes'],
+  motor: ['Hobbywing QuicRun 3650 SD G2 10.5T', '3600 Kv, 36 × 52.8 mm, 186 g, 3.17 shaft'], spur: ['Kimbrough #148 87T 48P spur', 'Drilled on the carrier spigot'],
+  pinion: ['14T 48P pinion', '3.17 bore, hub inboard'], rear_axle: ['Ø5 × 172 mm hardened shaft', '0.5 mm flat under the coupling set screws'],
+  coupling: ['5 mm rigid flange coupling', '22 mm flange, 4 × M3 on 16 mm; hub ≤ 10.5 mm'],
+  front_axles: ['Ø5 × 32 mm hardened stubs', 'Through both knuckle bearings'],
+  kingpins: ['Ø3 × 60 mm hardened pins', 'Pressed into the lower arms; knuckles slide on them'], bushes: ['K&S brass tube 4.0 × 3.1', 'Pressed into the barrels, reamed 3.05'],
+  collars: ['5 mm shaft collars', 'Axle retention'], shocks: ['Injora 53 mm oil shocks', '39 to 53 mm; body and eye dims VERIFY'],
+  foam_bumper: ['Schumacher foam bumper', 'Trimmed to 110 mm, 10 mm ahead of the tires'], body_posts: ['6 mm aluminium standoffs', 'Cut so the top stands 9 mm above the skin'],
+  body: ['PROTOform Venturi GT 190 mm', 'Clear polycarbonate, about 90 g painted. Shape heights are a stand-in until the shell is in hand'],
   windows: ['Venturi GT windows', 'Masked before painting'], wing: ['Venturi GT wing', 'Included with the body'] };
 const colorOf = m => m.userData.color || css('--g-' + m.userData.group);
 

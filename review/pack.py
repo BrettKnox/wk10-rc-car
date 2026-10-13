@@ -2,7 +2,8 @@
 import pathlib, zipfile
 root = pathlib.Path(__file__).resolve().parent.parent
 out = root / "review" / "WK10-cad-package.zip"
-globs = ["README.md", "cad/wk10.py", "cad/sheets.py", "review/data.json", "cad/out/*.step",
+globs = ["README.md", "cad/wk10.py", "cad/bought.py", "cad/sheets.py", "review/data.json", "cad/out/*.step",
+         "firmware/**/*.ino", "firmware/**/*.h", "firmware/**/*.cpp", "firmware/*.md", "tools/*.py",
          "cad/out/print/*.stl", "review/sheets/*.svg", "cad/out/render_*.png"]
 files = [p for g in globs for p in sorted(root.glob(g))]
 with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:

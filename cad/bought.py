@@ -60,7 +60,7 @@ def wheel():
     rim = barrel + lip + cz(0, 0, z0, z1, 19)
     for i in range(6):
         rim += Rot(0, 0, i * 60) * Pos(RIM_D / 4 + 2.5, 0, z1 - 1.5) * Box(RIM_D / 2 - 7, 6, 3)
-    hexa = Pos(0, 0, z0 - 0.01) * extrude(RegularPolygon(HEX_AF / math.sqrt(3), 6), HEX_DEPTH)
+    hexa = Pos(0, 0, z0 - 0.01) * extrude(RegularPolygon(HEX_AF / math.sqrt(3), 6), HEX_DEPTH + 0.02)
     rim = rim - hexa - Cylinder(2.7, w * 2)
     return tire, rim
 
@@ -235,3 +235,139 @@ def body_inner_z(shell, x, y):
     """Underside of the shell's top skin at (x, y): where a body post meets the body."""
     col = shell & bx(x - 0.5, x + 0.5, y - 0.5, y + 0.5, 0, 200)
     return col.bounding_box().min.Z
+
+
+# ================================================================ Rev F bought parts
+# ---------------------------------------------------------------- Injora INJS014 low-profile servo
+# injora.com: 40 x 20 x 28.8 mm, 50 g, 25T spline (5.9 mm), 14 kg-cm / 0.08 s at 6 V.
+# Ear hole spacing, ear height and spline offset are NOT published: VERIFY all three on arrival.
+LP_SERVO = dict(l=40.0, w=20.0, case_h=25.4, h=28.8, ear_z=14.0, ear_span=54.0, hole_spc=49.5,
+                hole_x=10.0, spline_off=10.0, stall_nm=1.37)
+
+
+def lp_servo():
+    """Own frame: case bottom z=0, long axis on Y from 0 (spline end) to -l, x centred."""
+    s = LP_SERVO
+    c = bx(-s["w"] / 2, s["w"] / 2, -s["l"], 0, 0, s["case_h"])
+    c += cz(0, -s["spline_off"], s["case_h"], s["h"] - 1.0, 12)                  # output turret
+    c += cz(0, -s["spline_off"], s["h"] - 1.0, s["h"], 5.9)                      # spline
+    ears = bx(-s["w"] / 2 + 1, s["w"] / 2 - 1, -s["l"] / 2 - s["ear_span"] / 2, -s["l"] / 2 + s["ear_span"] / 2,
+              s["ear_z"], s["ear_z"] + 2.5)
+    for k in (1, -1):
+        for dx in (s["hole_x"] / 2, -s["hole_x"] / 2):
+            ears -= cz(dx, -s["l"] / 2 + k * s["hole_spc"] / 2, s["ear_z"] - 1, s["ear_z"] + 4, 4.1)
+    c += ears
+    c += bx(-3, 3, -s["l"] - 4, -s["l"], 2, 6)                                   # lead exit
+    return c
+
+
+# ---------------------------------------------------------------- Kimbrough 114 servo saver (25T)
+# hobbyetc.com part 5704. Arm length, hole radius and height are NOT published: VERIFY.
+SAVER = dict(hub_d=17.0, h=12.0, arm_r=14.0, arm_w=8.0, arm_t=3.0)
+
+
+def servo_saver():
+    """Own frame: sits on the spline top at z=0, arm toward +X with its top face at z=h."""
+    s = SAVER
+    sv = cz(0, 0, 0, s["h"], s["hub_d"])
+    sv += bx(0, s["arm_r"] + 4, -s["arm_w"] / 2, s["arm_w"] / 2, s["h"] - s["arm_t"], s["h"])
+    sv -= cz(s["arm_r"], 0, s["h"] - 5, s["h"] + 1, 3.0)
+    return sv
+
+
+# ---------------------------------------------------------------- Hot Racing RCS160C03 rod ends + 5.8 mm balls
+# hobbyetc.com part 73558: 5.8 mm ball, about 7 mm long, M3 cup thread, 18.9 mm from the cup's
+# threaded end to the ball centre, 23 mm overall. Cup width not published (8.5 assumed).
+BALL_D, CUP_LEN, CUP_W = 5.8, 18.9, 8.5
+
+
+def tie_rod(p0, p1):
+    """Ball centre p0 -> ball centre p1 (3D): two cups on a cut M3 rod. Returns (cups, rod, balls)."""
+    from build123d import Solid, Vector, Sphere
+    a, b = Vector(*p0), Vector(*p1)
+    d = (b - a).normalized()
+    cups, balls = None, None
+    for c, sgn in ((a, 1), (b, -1)):
+        ball = Pos(c.X, c.Y, c.Z) * Sphere(BALL_D / 2)
+        body = Solid.make_cylinder(3.5, CUP_LEN - 3.0, Plane(origin=c + d * (sgn * 3.0), z_dir=d * sgn))
+        head = Pos(c.X, c.Y, c.Z) * Sphere(CUP_W / 2) - ball
+        cup = body + head - ball
+        cups = cup if cups is None else cups + cup
+        balls = ball if balls is None else balls + ball
+    r0, r1 = a + d * (CUP_LEN - 4), b - d * (CUP_LEN - 4)
+    rod = Solid.make_cylinder(1.5, (r1 - r0).length, Plane(origin=r0, z_dir=r1 - r0))
+    return cups, rod, balls
+
+
+# ---------------------------------------------------------------- Tamiya 53823 5 mm clamping hex
+# adrenalinercracing.com: 12 mm hex, 5 mm bore, clamps with a cap screw. Thickness and flange are
+# NOT published: VERIFY (6.0 mm total assumed: 5 mm hex + 1 mm flange).
+CLAMP_HEX = dict(af=12.0, hex_t=5.0, flange_d=14.0, flange_t=1.0)
+
+
+def clamp_hex():
+    """Own frame: bore on Z, flange (inboard) at z 0..flange_t, hex above it."""
+    h = CLAMP_HEX
+    s = cz(0, 0, 0, h["flange_t"], h["flange_d"])
+    s += Pos(0, 0, h["flange_t"]) * extrude(RegularPolygon(h["af"] / math.sqrt(3), 6), h["hex_t"])
+    s -= cz(0, 0, -1, h["flange_t"] + h["hex_t"] + 1, 5.0)
+    s -= bx(-0.4, 0.4, 2.5, 7, -1, 10)                                           # clamp slit
+    return s
+
+
+# ---------------------------------------------------------------- 5 mm rigid flange coupling (spool hub)
+# Generic aluminium 5 mm bore flange coupling: 22 mm flange, 4 x M3 on a 16 mm circle, 10 mm hub,
+# two M4 set screws. Dimensions vary by seller: VERIFY the one bought.
+FLANGE = dict(flange_d=22.0, flange_t=4.0, hub_d=10.0, hub_l=10.0, bc=16.0)   # hub_l MUST be <= 10.5: buy to fit
+
+
+def flange_coupling():
+    """Own frame: bore on Z, flange at z 0..flange_t, hub above it."""
+    f = FLANGE
+    c = cz(0, 0, 0, f["flange_t"], f["flange_d"]) + cz(0, 0, f["flange_t"], f["flange_t"] + f["hub_l"], f["hub_d"])
+    c -= cz(0, 0, -1, 30, 5.0)
+    for i in range(4):
+        a = math.radians(45 + 90 * i)
+        c -= cz(f["bc"] / 2 * math.cos(a), f["bc"] / 2 * math.sin(a), -1, f["flange_t"] + 1, 3.2)
+    return c
+
+
+# ---------------------------------------------------------------- Injora 4M-24 53 mm threaded oil shock
+# 997rcraceway.com: 53 mm eye to eye extended, 39 compressed, 14 mm travel, 43 mm spring.
+# Body and spring diameters and eye holes are NOT published: VERIFY (10 / 12 / 3 mm assumed).
+SHOCK = dict(ext=53.0, comp=39.0, body_d=10.0, spring_d=12.0, eye_d=6.0, eye_hole=3.0)
+
+
+def shock(length):
+    """Eye-to-eye `length` along Z from z=0 (bottom eye centre). Eyes' holes along X."""
+    s = SHOCK
+    e = s["eye_d"]
+    sh = cz(0, 0, e / 2, length * 0.62, s["body_d"])                              # body + cap
+    sh += cz(0, 0, length * 0.62, length - e / 2, 3.0)                           # shaft
+    sh += cz(0, 0, length * 0.25, length * 0.62, s["spring_d"]) - cz(0, 0, length * 0.2, length * 0.7, s["spring_d"] - 2)
+    for z in (0, length):
+        eye = Pos(0, 0, z) * Rot(0, 90, 0) * (Cylinder(e / 2, 3.0) - Cylinder(s["eye_hole"] / 2, 4))
+        sh += eye
+    return sh
+
+
+# ---------------------------------------------------------------- Schumacher SCHU7790 foam bumper
+# hobbyetc.com part 146324: grey open-cell foam, part dimensions NOT published (box 184 x 114 x 16):
+# modelled as a 170 x 15 x 14 block trimmed to the car, VERIFY.
+FOAM = dict(w=110.0, d=15.0, h=14.0)
+
+
+def foam_bumper():
+    """Own frame: rear face on x=0, centred on y, bottom at z=0."""
+    f = FOAM
+    b = bx(0, f["d"], -f["w"] / 2, f["w"] / 2, 0, f["h"])
+    return fillet(b.edges().filter_by(Axis.Z).group_by(Axis.X)[-1], 5.0)
+
+
+# ---------------------------------------------------------------- Hot Racing 6 x 58 mm M3 standoff (body post)
+POST_STANDOFF = 58.0
+
+
+def body_standoff(length=POST_STANDOFF):
+    """Cut to `length` where the body sits lower than 58 mm above the seat."""
+    return cz(0, 0, 0, length, 6.0) - cz(0, 0, -1, length + 1, 2.5)
