@@ -294,3 +294,7 @@ Researched 2026-10-09 and 2026-10-13:
 - [Club Race Hero printed pan cars](https://www.liverc.com/news/new-club-race-hero-3d-printed-pan-cars/): print the chassis, buy the pod plates, front suspension, damper and bumper.
 
 Nothing here copies geometry from these; they set the targets and the failure list.
+
+## License
+
+MIT, see [LICENSE](LICENSE). Bought parts are named for reference only; their designs belong to their makers.
